@@ -8,15 +8,29 @@ class AST:
 
     def vis(self):
         G = nx.Graph()
-        G.add_node("1")
+        """G.add_node("1")
         G.add_node("2")
         G.add_node("3")
-        G.add_edge("1", "2")
-        G.add_edge("2", "3")
-        nxd.write_dot(G, "heere.dot")
+        G.add_edge("+", "3")
+        G.add_edge("+", "3")
+        G.add_edge("5", "1")
+        G.
+        G.add_edge("2", "4")"""
 
-        (graph,) = pydot.graph_from_dot_file('heere.dot')
-        graph.write_png('somefile.png')
+        nodes = [self.root]
+
+        while nodes:
+            for j in nodes[0].children:
+                G.add_edge(nodes[0].type, j.type)
+                nodes.append(j)
+            nodes.pop(0)
+
+
+        #nxd.write_dot(G, "ASTdot.dot")
+        #(graph,) = pydot.graph_from_dot_file('ASTdot.dot')
+
+        gr = nx.drawing.nx_pydot.to_pydot(G)
+        gr.write_png('ASTpng.png')
 
 
         """"

@@ -1,10 +1,12 @@
 class Node:
-    children = list()
+    children = []
     declarationChild = None
-    type = None
+    type = "None"
+    childrenInit: int = 0
 
     def addNodes(self, nodes):
-        Node.children.append(nodes)
+        self.children.append(nodes)
+        self.childrenInit = 1
 
 
 class RunNode(Node):
