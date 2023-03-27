@@ -11,15 +11,15 @@ line
 statement
     : assignment ';'
     | declaration ';'
-    | expression ';'
-    | 'printf' '(' (IDENTIFIER | LITERAL) ')' ';'';
+    | boolexpression ';'
+    | 'printf' '(' (IDENTIFIER | LITERAL) ')' ';';
 
 comment
     : SINGLECOMMENT
     | MULTICOMMENT;
 
 assignment
-    : declaration EQUALS expression;
+    : declaration EQUALS boolexpression;
 
 declaration
     : instantiation
@@ -29,20 +29,21 @@ declaration
 instantiation
     : CONST? TYPE IDENTIFIER;
 
-expression
-    : '('? (compexpression | term ) ')'?;
-
-compexpression
-    : term ((LOGICOPS | COMPOPS) term)+;
+boolexpression
+    : '('? term (BOOLOPS (term | boolexpression))? ')'?;
 
 term
-    : factor (TERMOPS factor)*;
+    : factor (TERMOPS (factor | term))?;
 
 factor
-    : element (FACTOROPS element)*;
+    : element (FACTOROPS (element | factor))?;
 
 element
-    : UNARYOPS? (LITERAL | IDENTIFIER | '(' expression ')') SPECIALUNARY?;
+    : (UNARYOPS)? (literal | IDENTIFIER | POINTER | '(' boolexpression ')') SPECIALUNARY?;
+
+BOOLOPS
+    : LOGICOPS
+    | COMPOPS;
 
 COMPOPS
     : '<' | '>' | '<=' | '>=' | '==' | '!=';
@@ -53,14 +54,14 @@ LOGICOPS
 TYPE
     : (INT | CHAR | FLOAT) '*'*;
 
+UNARYOPS
+    : '-' | '!' | '&';
+
 TERMOPS
     : '+' | '-';
 
 FACTOROPS
     : '*' | '/' | '%';
-
-UNARYOPS
-    : '+' | '-' | '!' | '*' | '&';
 
 SPECIALUNARY
     : '++' | '--';
@@ -77,12 +78,19 @@ POINTER
 IDENTIFIER
     : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
 
-LITERAL
-    : 'true'
-    | 'false'
+literal
+    : TRUE
+    | FALSE
+    | FLOAT
+    | INT
     | DIGIT+ ((',' | '.') DIGIT+)?
+    | CHAR
     | SINGLESTRING
     | DOUBLESTRING;
+
+TRUE: 'true';
+
+FALSE: 'false';
 
 SINGLESTRING
     : '\'' .*? '\'';

@@ -1,6 +1,5 @@
 # CompilersYenM
 
 Simple Compiler project by
-  Youssef Al Aseri
-  Berkay Eser 
-  
+  Youssef El Aseri
+  Berkay Eser

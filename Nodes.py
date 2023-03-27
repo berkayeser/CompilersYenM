@@ -1,6 +1,5 @@
 class Node:
     children = list()
-    declarationChild = None
     type = None
 
     def addNodes(self, nodes):
@@ -31,34 +30,50 @@ class AssignmentNode(Node):
     expression = None
 
 
-class VariableNode(Node):
-    type = "variable"
-    value = None
-
-
 class InstantiationNode(Node):
     type = ""
     const = False
     name = ""
 
 
-class DeclarationNode(Node):
-    type = "="
+class VariableNode(Node):
+    type = "variable"
+    name = ""
+
+
+class PointerNode(Node):
+    type = "pointer"
     name = ""
 
 
 class CompareNode(Node):
-    type = "compare"
-    comparison = None
+    type = ""
+    left = None
+    right = None
 
 
 class TermNode(Node):
-    type = "+"
+    type = ""
+    left = None
+    right = None
 
 
 class FactorNode(Node):
-    type = "*"
+    type = ""
+    left = None
+    right = None
 
 
-class Unary(Node):
-    type = "++"
+class UnaryNode(Node):
+    type = ""
+    variable = None
+
+
+class SpecialUnaryNode(Node):
+    type = ""
+    variable = None
+
+
+class LiteralNode(Node):
+    type = ""
+    value = ""

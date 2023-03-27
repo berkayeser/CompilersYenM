@@ -12,13 +12,13 @@ class AstVisitor(CVisitor):
             result.append(c.accept(self))
         return result
 
-    def visitChildren(self, node):
-        result = None
-        n = node.getChildCount()
-        for i in range(n):
-            c = node.getChild(i)
-            result = c.accept(self)
-        return result
+    # def visitChildren(self, node):
+    #     result = None
+    #     n = node.getChildCount()
+    #     for i in range(n):
+    #         c = node.getChild(i)
+    #         result = c.accept(self)
+    #     return result
 
     def visitRun(self, ctx:CParser.RunContext):
         node = RunNode()
@@ -44,24 +44,30 @@ class AstVisitor(CVisitor):
         if ctx.assignment():
             node.children = [self.visitAssignment(ctx.assignment())]
         elif ctx.declaration():
-            node.children = [self.visitAssignment(ctx.declaration())]
-        elif ctx.expression():
-            node.children = [self.visitAssignment(ctx.expression())]
+            node.children = [self.visitDeclaration(ctx.declaration())]
+        elif ctx.boolexpression():
+            node.children = [self.visitBoolexpression(ctx.boolexpression())]
         else:
             node.children = [ctx.getText()]
         return node
 
     def visitAssignment(self, ctx:CParser.AssignmentContext):
         node = AssignmentNode()
-        node.declaration = self.visitChildrenList(ctx)
+        # node.children = self.visitChildrenList(ctx)
+        node.declaration = self.visitDeclaration(ctx.declaration())
+        node.expression = self.visitBoolexpression(ctx.boolexpression())
         return node
 
     def visitDeclaration(self, ctx:CParser.DeclarationContext):
-        node = DeclarationNode()
+        node = None
         if ctx.instantiation():
-            node.children = self.visitInstantiation(ctx.instantiation())
-            return node
-        node.name = ctx.getText()
+            node = self.visitInstantiation(ctx.instantiation())
+        elif ctx.IDENTIFIER():
+            node = VariableNode()
+            node.name = ctx.getText()
+        elif ctx.POINTER():
+            node = PointerNode()
+            node.name = ctx.getText()
         return node
 
     def visitInstantiation(self, ctx:CParser.InstantiationContext):
@@ -72,25 +78,74 @@ class AstVisitor(CVisitor):
         node.name = ctx.IDENTIFIER()
         return node
 
-    def visitExpression(self, ctx:CParser.ExpressionContext):
-        return self.visitChildrenList(ctx)
-
-    def visitCompexpression(self, ctx:CParser.CompexpressionContext):
+    def visitBoolexpression(self, ctx:CParser.BoolexpressionContext):
+        if not ctx.BOOLOPS():
+            return self.visitTerm(ctx.term())
         node = CompareNode()
-        if ctx.COMPOPS():
-            node.comparison = ctx.COMPOPS()
+        node.type = ctx.BOOLOPS()
+        node.left = self.visitTerm(ctx.term(0))
+        if ctx.boolexpression():
+            node.right = self.visitBoolexpression(ctx.boolexpression())
         else:
-            node.comparison = ctx.LOGICOPS()
-        node.children = self.visitChildrenList(ctx)
+            node.right = self.visitTerm(ctx.term(1))
         return node
 
     def visitTerm(self, ctx:CParser.TermContext):
+        if not ctx.TERMOPS():
+            return self.visitTerm(ctx.factor())
         node = TermNode()
-        node.operatin = ctx.TERMOPS()
+        node.type = ctx.TERMOPS()
+        node.left = self.visitTerm(ctx.factor(0))
+        if ctx.term():
+            node.right = self.visitTerm(ctx.term())
+        else:
+            node.right = self.visitFactor(ctx.factor(1))
         return node
 
     def visitFactor(self, ctx:CParser.FactorContext):
-        return self.visitChildrenList(ctx)
+        if not ctx.FACTOROPS():
+            return self.visitElement(ctx.element())
+        node = FactorNode()
+        node.type = ctx.FACTOROPS()
+        node.left = self.visitElement(ctx.element(0))
+        if ctx.factor():
+            node.right = self.visitFactor(ctx.factor())
+        else:
+            node.right = self.visitElement(ctx.element(1))
+        return node
 
     def visitElement(self, ctx:CParser.ElementContext):
-        return "hey"
+        variable = None
+        if ctx.literal():
+            variable = self.visitLiteral(ctx.literal())
+        elif ctx.IDENTIFIER():
+            variable = VariableNode()
+            variable.name = ctx.IDENTIFIER()
+        elif ctx.POINTER():
+            variable = PointerNode()
+            variable.name = ctx.POINTER()
+        elif ctx.boolexpression():
+            variable = self.visitBoolexpression(ctx.boolexpression())
+        node = None
+        if ctx.UNARYOPS() and ctx.SPECIALUNARY():
+            node = UnaryNode()
+            node.type = ctx.UNARYOPS()
+            node.variable = SpecialUnaryNode()
+            node.variable.type = ctx.SPECIALUNARY()
+            node.variable.variable = variable
+        elif ctx.UNARYOPS():
+            node = UnaryNode()
+            node.type = ctx.UNARYOPS()
+            node.variable = variable
+        elif ctx.SPECIALUNARY():
+            node = SpecialUnaryNode()
+            node.type = ctx.SPECIALUNARY()
+            node.variable = variable
+        else:
+            return variable
+        return node
+
+    def visitLiteral(self, ctx:CParser.LiteralContext):
+        node = LiteralNode()
+        node.value = ctx.getText()
+        return node

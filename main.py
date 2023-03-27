@@ -8,7 +8,7 @@ from AST import AST
 from Nodes import *
 
 def main(argv):
-    """"input_stream = FileStream(sys.argv[1])
+    input_stream = FileStream(sys.argv[1])
     lexer = CLexer(input_stream)
     tokens = CommonTokenStream(lexer)
     parser = CParser(tokens)
@@ -16,18 +16,19 @@ def main(argv):
     visitor = AstVisitor()
     ast = AST()
     ast.root = visitor.visit(tree)
-    ast.graphViz()"""
-    r = Node()
-    ru = RunNode()
-    li = LineNode()
-    st = StatementNode()
-    li.addNodes(st)
-    r.addNodes(ru)
-    r.addNodes(li)
-
-    b = AST()
-    b.root = r
-    b.vis()
+    a = 5
+    # ast.graphViz()
+    # r = Node()
+    # ru = RunNode()
+    # li = LineNode()
+    # st = StatementNode()
+    # li.addNodes(st)
+    # r.addNodes(ru)
+    # r.addNodes(li)
+    #
+    # b = AST()
+    # b.root = r
+    # b.vis()
 
 
 if __name__ == '__main__':

@@ -71,21 +71,12 @@ class CListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CParser#expression.
-    def enterExpression(self, ctx:CParser.ExpressionContext):
+    # Enter a parse tree produced by CParser#boolexpression.
+    def enterBoolexpression(self, ctx:CParser.BoolexpressionContext):
         pass
 
-    # Exit a parse tree produced by CParser#expression.
-    def exitExpression(self, ctx:CParser.ExpressionContext):
-        pass
-
-
-    # Enter a parse tree produced by CParser#compexpression.
-    def enterCompexpression(self, ctx:CParser.CompexpressionContext):
-        pass
-
-    # Exit a parse tree produced by CParser#compexpression.
-    def exitCompexpression(self, ctx:CParser.CompexpressionContext):
+    # Exit a parse tree produced by CParser#boolexpression.
+    def exitBoolexpression(self, ctx:CParser.BoolexpressionContext):
         pass
 
 
@@ -113,6 +104,15 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#element.
     def exitElement(self, ctx:CParser.ElementContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#literal.
+    def enterLiteral(self, ctx:CParser.LiteralContext):
+        pass
+
+    # Exit a parse tree produced by CParser#literal.
+    def exitLiteral(self, ctx:CParser.LiteralContext):
         pass
 
 
