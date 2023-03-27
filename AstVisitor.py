@@ -110,7 +110,7 @@ class AstVisitor(CVisitor):
         node.type = ctx.FACTOROPS()
         node.left = self.visitElement(ctx.element(0))
         if ctx.factor():
-            node.right = self.visitFactor(ctx.factor(0))
+            node.right = self.visitFactor(ctx.factor())
         else:
             node.right = self.visitElement(ctx.element(1))
         return node
