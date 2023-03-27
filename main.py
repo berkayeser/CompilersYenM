@@ -27,6 +27,21 @@ def main(argv):
         print(len(i.children))
     for i in ast.root.children[1].children:
         print(i.type)
+    optimizer = AstOptimizer()
+    ast = optimizer.constantFolding(ast)
+    a = 5
+    # ast.graphViz()
+    # r = Node()
+    # ru = RunNode()
+    # li = LineNode()
+    # st = StatementNode()
+    # li.addNodes(st)
+    # r.addNodes(ru)
+    # r.addNodes(li)
+    #
+    # b = AST()
+    # b.root = r
+    # b.vis()
 
 
 if __name__ == '__main__':
