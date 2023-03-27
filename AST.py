@@ -1,46 +1,54 @@
 from Nodes import *
 from graphviz import Digraph
-# import networkx as nx
-# import networkx.drawing.nx_pydot as nxd
-# import pydot
+import networkx as nx
+import networkx.drawing.nx_pydot as nxd
+import pydot
+import matplotlib.pyplot as plt
+
 class AST:
     root = Node
 
     def vis(self):
-        pass
-        # G = nx.Graph()
-        """G.add_node("1")
-        G.add_node("2")
-        G.add_node("3")
-        G.add_edge("+", "3")
-        G.add_edge("+", "3")
-        G.add_edge("5", "1")
-        G.
-        G.add_edge("2", "4")"""
+        G = pydot.Dot(graph_type="digraph", strict=True)
+
+        """u = pydot.Node(name="1", label="One")
+        v = pydot.Node(name="2", label="One")
+        r = pydot.Node(name="3", label="One")
+        G.add_node(u)
+        G.add_node(v)
+        G.add_node(r)
+        G.add_edge(pydot.Edge(u,v))
+        G.add_edge(pydot.Edge(u,r))"""
 
         nodes = [self.root]
-        #
-        # while nodes:
-        #     for j in nodes[0].children:
-        #         G.add_edge(nodes[0].type, j.type)
-        #         nodes.append(j)
-        #     nodes.pop(0)
-        #
-        #
-        # #nxd.write_dot(G, "ASTdot.dot")
-        # #(graph,) = pydot.graph_from_dot_file('ASTdot.dot')
-        #
-        # gr = nx.drawing.nx_pydot.to_pydot(G)
-        # gr.write_png('ASTpng.png')
+        id = 0
 
+        while nodes:
+            u = pydot.Node(name=id, label=nodes[0].type)
+            id += 1
+            G.add_node(u)
+            #print(nodes[0].type + " en kids: " + str(len(nodes[0].children)))
+            for j in nodes[0].children:
+                v = pydot.Node(name=id, label=j.type)
+                id += 1
+                G.add_node(v)
+                G.add_edge(pydot.Edge(u,v))
+            nodes.pop(0)
 
-        """"
-        i = 0
-        graph = Digraph()
-        graph.node(i.__str__(), self.root.type)
-        i += 1
-        for node in self.root.children:
-            graph.node(i.__str__(), node.type)
-            graph.edge("0", i.__str__(), contstraint="false")
-            i += 1
-        print(graph)"""
+        G.write_png('ASTpng.png')
+
+    def vis2(self):
+        G = nx.DiGraph()
+        nodes = [self.root]
+
+        while nodes:
+            print(nodes[0].type + " en kids: " + str(len(nodes[0].children)))
+            for j in nodes[0].children:
+                G.add_edge(nodes[0].type, j.type)
+                nodes.append(j)
+            nodes.pop(0)
+
+        # nxd.write_dot(G, "ASTdot.dot")
+        # (graph,) = pydot.graph_from_dot_file('ASTdot.dot')
+        gr = nx.drawing.nx_pydot.to_pydot(G)
+        gr.write_png('ASTpng.png')

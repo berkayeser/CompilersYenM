@@ -9,7 +9,8 @@ from Nodes import *
 from AstOptimizer import AstOptimizer
 
 def main(argv):
-    input_stream = FileStream(sys.argv[1])
+    input_stream = FileStream("example.txt")
+    #input_stream = FileStream(sys.argv[1])
     lexer = CLexer(input_stream)
     tokens = CommonTokenStream(lexer)
     parser = CParser(tokens)
@@ -19,19 +20,13 @@ def main(argv):
     ast.root = visitor.visit(tree)
     optimizer = AstOptimizer()
     ast = optimizer.constantFolding(ast)
-    a = 5
-    # ast.graphViz()
-    # r = Node()
-    # ru = RunNode()
-    # li = LineNode()
-    # st = StatementNode()
-    # li.addNodes(st)
-    # r.addNodes(ru)
-    # r.addNodes(li)
-    #
-    # b = AST()
-    # b.root = r
-    # b.vis()
+
+    ast.vis()
+    for i in ast.root.children:
+        print(i.type)
+        print(len(i.children))
+    for i in ast.root.children[1].children:
+        print(i.type)
 
 
 if __name__ == '__main__':
