@@ -1,17 +1,20 @@
 class Node:
     children = []
     type = None
-    childrenInit: int = 0
+    #childrenInit: int = 0
 
     def __init__(self):
         self.children = []
 
     def addNodes(self, nodes):
         self.children.append(nodes)
-        self.childrenInit = 1
+        #self.childrenInit = 1
 
     def foldConstant(self):
         return None
+
+    def getASTvalue(self):
+        return self.type
 
 
 class RunNode(Node):
@@ -28,10 +31,16 @@ class StatementNode(Node):
     type = "statement"
     instruction = ""
 
+    def getASTvalue(self):
+        return self.instruction
+
 
 class CommentNode(Node):
     type = "comment"
     text = ""
+
+    def getASTvalue(self):
+        return self.text
 
 
 class AssignmentNode(Node):
@@ -42,14 +51,20 @@ class AssignmentNode(Node):
 
 class InstantiationNode(Node):
     type = "instantiation"
-    varType = ""
+    varType = "" # type int, float, ...
     const = False
-    name = ""
+    name = "" # variable name x, y , ...
+
+    def getASTvalue(self):
+        return str(self.name)
 
 
 class VariableNode(Node):
     type = "variable"
     name = ""
+
+    def getASTvalue(self):
+        return str(self.name)
 
 
 class PointerNode(Node):
@@ -112,6 +127,9 @@ class TermNode(Node):
     left = None
     right = None
 
+    def getASTvalue(self):
+        return str(self.operation)
+
     def foldConstant(self):
         if self.left.type == "literal" and self.right.type == "literal":
             node = LiteralNode()
@@ -144,6 +162,9 @@ class FactorNode(Node):
     operation = ""
     left = None
     right = None
+
+    def getASTvalue(self):
+        return str(self.operation)
 
     def foldConstant(self):
         if self.left.type == "literal" and self.right.type == "literal":
@@ -178,6 +199,9 @@ class UnaryNode(Node):
     type = "unary"
     operation = ""
     variable = None
+
+    def getASTvalue(self):
+        return str(self.operation)
 
     def foldConstant(self):
         if self.variable.type == "literal":
@@ -234,6 +258,8 @@ class LiteralNode(Node):
     literalType = ""
     value = ""
 
+    def getASTvalue(self):
+        return str(self.value)
     def convertValType(self):
         val = self.value
         if self.literalType == "int":

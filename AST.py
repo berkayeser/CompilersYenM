@@ -11,28 +11,36 @@ class AST:
     def vis(self):
         G = pydot.Dot(graph_type="digraph", strict=True)
 
-        """u = pydot.Node(name="1", label="One")
-        v = pydot.Node(name="2", label="One")
-        r = pydot.Node(name="3", label="One")
-        G.add_node(u)
-        G.add_node(v)
-        G.add_node(r)
-        G.add_edge(pydot.Edge(u,v))
-        G.add_edge(pydot.Edge(u,r))"""
 
         nodes = [self.root]
         id = 0
 
         while nodes:
-            u = pydot.Node(name=id, label=nodes[0].type)
+            t = 0
+            if nodes[0].type == "literal":
+                #print(nodes[0].value)
+                t = nodes[0].value
+            else:
+                t = nodes[0].type
+            u = pydot.Node(name=id, label=t)
             id += 1
             G.add_node(u)
             #print(nodes[0].type + " en kids: " + str(len(nodes[0].children)))
             for j in nodes[0].children:
-                v = pydot.Node(name=id, label=j.type)
+
+                if j.type == "literal":
+                    #print(j.value)
+                    t = j.value
+                else:
+                    t = j.type
+
+                v = pydot.Node(name=id, label=t)
                 id += 1
+
                 G.add_node(v)
                 G.add_edge(pydot.Edge(u,v))
+                nodes.append(j)
+
             nodes.pop(0)
 
         G.write_png('ASTpng.png')
@@ -42,9 +50,14 @@ class AST:
         nodes = [self.root]
 
         while nodes:
-            print(nodes[0].type + " en kids: " + str(len(nodes[0].children)))
+            t = 00
+            if nodes[0].type == "literal":
+                print(nodes[0].value)
+                t = nodes[0].value
+            else:
+                t = nodes[0].type
             for j in nodes[0].children:
-                G.add_edge(nodes[0].type, j.type)
+                G.add_edge(t, j.type)
                 nodes.append(j)
             nodes.pop(0)
 
@@ -52,3 +65,14 @@ class AST:
         # (graph,) = pydot.graph_from_dot_file('ASTdot.dot')
         gr = nx.drawing.nx_pydot.to_pydot(G)
         gr.write_png('ASTpng.png')
+
+
+        """u = pydot.Node(name="1", label="One")
+        v = pydot.Node(name="2", label="One")
+        r = pydot.Node(name="3", label="One")
+        G.add_node(u)
+        G.add_node(v)
+        G.add_node(r)
+        G.add_edge(pydot.Edge(u,v))
+        G.add_edge(pydot.Edge(u,r))"""
+
