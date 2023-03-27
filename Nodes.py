@@ -1,13 +1,15 @@
 class Node:
-    children = list()
-    type = None
-    children = []
-    type = "None"
-    childrenInit: int = 0
+    def __int__(self):
+        self.children = []
+        self.type = None
+        self.childrenInit: int = 0
 
     def addNodes(self, nodes):
         self.children.append(nodes)
         self.childrenInit = 1
+
+    def foldConstant(self):
+        return False
 
 
 class RunNode(Node):
@@ -21,6 +23,7 @@ class LineNode(Node):
 
 
 class StatementNode(Node):
+    type = "statement"
     instruction = ""
 
 
@@ -30,12 +33,14 @@ class CommentNode(Node):
 
 
 class AssignmentNode(Node):
+    type = "assignment"
     declaration = None
     expression = None
 
 
 class InstantiationNode(Node):
-    type = ""
+    type = "instantiation"
+    varType = ""
     const = False
     name = ""
 
@@ -51,33 +56,39 @@ class PointerNode(Node):
 
 
 class CompareNode(Node):
-    type = ""
+    type = "compare"
+    operation = ""
     left = None
     right = None
 
 
 class TermNode(Node):
-    type = ""
+    type = "term"
+    operation = ""
     left = None
     right = None
 
 
 class FactorNode(Node):
-    type = ""
+    type = "factor"
+    operation = ""
     left = None
     right = None
 
 
 class UnaryNode(Node):
-    type = ""
+    type = "unary"
+    operation = ""
     variable = None
 
 
 class SpecialUnaryNode(Node):
-    type = ""
+    type = "special_unary"
+    operation = ""
     variable = None
 
 
 class LiteralNode(Node):
-    type = ""
+    type = "literal"
+    literalType = ""
     value = ""

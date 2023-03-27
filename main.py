@@ -6,6 +6,7 @@ from CParser import CParser
 from AstVisitor import *
 from AST import AST
 from Nodes import *
+from AstOptimizer import AstOptimizer
 
 def main(argv):
     input_stream = FileStream(sys.argv[1])
@@ -16,6 +17,8 @@ def main(argv):
     visitor = AstVisitor()
     ast = AST()
     ast.root = visitor.visit(tree)
+    optimizer = AstOptimizer()
+    ast = optimizer.constantFolding(ast)
     a = 5
     # ast.graphViz()
     # r = Node()

@@ -68,6 +68,7 @@ SPECIALUNARY
 
 INT : 'int';
 CHAR : 'char';
+BOOL : 'bool';
 FLOAT : 'float';
 CONST : 'const';
 EQUALS : '=';
@@ -79,21 +80,30 @@ IDENTIFIER
     : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
 
 literal
-    : TRUE
-    | FALSE
-    | FLOAT
-    | INT
-    | DIGIT+ ((',' | '.') DIGIT+)?
-    | CHAR
-    | SINGLESTRING
+    : BOOLLITERAL
+    | INTLITERAL
+    | FLOATLITERAL
+    | CHARLITERAL
+    | STRINGLITERAL;
+
+INTLITERAL
+    : DIGIT+;
+
+FLOATLITERAL
+    : DIGIT+ ((',' | '.') DIGIT+)?;
+
+BOOLLITERAL
+    : 'true' | 'false';
+
+CHARLITERAL
+    : '\'' . '\'';
+
+STRINGLITERAL
+    : SINGLESTRING
     | DOUBLESTRING;
 
-TRUE: 'true';
-
-FALSE: 'false';
-
 SINGLESTRING
-    : '\'' .*? '\'';
+    : '\'' . . .*? '\'';
 
 DOUBLESTRING
     : '"' .*? '"';
