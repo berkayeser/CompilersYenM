@@ -80,10 +80,11 @@ class AstVisitor(CVisitor):
 
     def visitBoolexpression(self, ctx:CParser.BoolexpressionContext):
         if not ctx.BOOLOPS():
-            return self.visitTerm(ctx.term())
+            return self.visitTerm(ctx.term(0))
         node = CompareNode()
         node.type = ctx.BOOLOPS()
-        node.left = self.visitTerm(ctx.term(0))
+        a = ctx.term(0)
+        node.left = self.visitTerm(a)
         if ctx.boolexpression():
             node.right = self.visitBoolexpression(ctx.boolexpression())
         else:
@@ -92,10 +93,10 @@ class AstVisitor(CVisitor):
 
     def visitTerm(self, ctx:CParser.TermContext):
         if not ctx.TERMOPS():
-            return self.visitTerm(ctx.factor())
+            return self.visitFactor(ctx.factor(0))
         node = TermNode()
         node.type = ctx.TERMOPS()
-        node.left = self.visitTerm(ctx.factor(0))
+        node.left = self.visitFactor(ctx.factor(0))
         if ctx.term():
             node.right = self.visitTerm(ctx.term())
         else:
@@ -104,12 +105,12 @@ class AstVisitor(CVisitor):
 
     def visitFactor(self, ctx:CParser.FactorContext):
         if not ctx.FACTOROPS():
-            return self.visitElement(ctx.element())
+            return self.visitElement(ctx.element(0))
         node = FactorNode()
         node.type = ctx.FACTOROPS()
         node.left = self.visitElement(ctx.element(0))
         if ctx.factor():
-            node.right = self.visitFactor(ctx.factor())
+            node.right = self.visitFactor(ctx.factor(0))
         else:
             node.right = self.visitElement(ctx.element(1))
         return node
