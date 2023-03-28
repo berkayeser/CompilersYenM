@@ -12,7 +12,7 @@ statement
     : assignment ';'
     | declaration ';'
     | boolexpression ';'
-    | 'printf' '(' (IDENTIFIER | LITERAL) ')' ';';
+    | 'printf' '(' (IDENTIFIER | literal) ')' ';';
 
 comment
     : SINGLECOMMENT
@@ -28,6 +28,9 @@ declaration
 
 instantiation
     : CONST? TYPE IDENTIFIER;
+
+//logicexpression
+//    : '('? boolexpression (LOGICOPS (boolexpression | logicexpression))? ')'?
 
 boolexpression
     : '('? term (BOOLOPS (term | boolexpression))? ')'?;
@@ -52,7 +55,7 @@ LOGICOPS
     : '&&' | '||';
 
 TYPE
-    : (INT | CHAR | FLOAT) '*'*;
+    : (INT | CHAR | FLOAT | BOOL) '*'*;
 
 UNARYOPS
     : '-' | '!' | '&';

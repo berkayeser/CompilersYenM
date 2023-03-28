@@ -11,9 +11,21 @@ class AstOptimizer:
 
     def constantFoldingRecursive(self, node: Node):
         folded = False
-        if (node.type == "compare" or node.type == "term" or node.type == "factor"
-                or node.type == "unary" or node.type == "special_unary"):
-            folded = node.foldConstant()
+        for i in range(len(node.children)):
+            childNode = node.children[i]
+            if (childNode.type == "compare" or childNode.type == "term" or childNode.type == "factor"
+                    or childNode.type == "unary" or childNode.type == "special_unary"):
+                result = childNode.foldConstant()
+                if result is not None:
+                    node.children[i] = result
+
+                    # node has to be an operation node
+                    if i == 1:
+                        node.right = result
+                    else:
+                        node.left = result
+                    folded = True
         for child in node.children:
-            self.constantFoldingRecursive(child)
+            if self.constantFoldingRecursive(child):
+                folded = True
         return folded

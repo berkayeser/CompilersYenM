@@ -13,7 +13,6 @@ class AstVisitor(CVisitor):
 
     def visitLine(self, ctx: CParser.LineContext):
         node = LineNode()
-        node.children = []
         if ctx.statement():
             node.statement = self.visitStatement(ctx.statement())
             node.children.append(node.statement)
@@ -24,13 +23,11 @@ class AstVisitor(CVisitor):
 
     def visitComment(self, ctx: CParser.CommentContext):
         node = CommentNode()
-        node.children = []
         node.text = ctx.getText()
         return node
 
     def visitStatement(self, ctx: CParser.StatementContext):
         node = StatementNode()
-        node.children = []
         node.instruction = ctx.getText()
         if ctx.assignment():
             node.children = [self.visitAssignment(ctx.assignment())]
@@ -44,10 +41,9 @@ class AstVisitor(CVisitor):
 
     def visitAssignment(self, ctx: CParser.AssignmentContext):
         node = AssignmentNode()
-        node.children = []
-        node.declaration = self.visitDeclaration(ctx.declaration())
-        node.expression = self.visitBoolexpression(ctx.boolexpression())
-        node.children = [node.declaration, node.expression]
+        node.left = self.visitDeclaration(ctx.declaration())
+        node.right = self.visitBoolexpression(ctx.boolexpression())
+        node.children = [node.left, node.right]
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
@@ -60,12 +56,10 @@ class AstVisitor(CVisitor):
         elif ctx.POINTER():
             node = PointerNode()
             node.name = ctx.getText()
-        node.children = []
         return node
 
     def visitInstantiation(self, ctx: CParser.InstantiationContext):
         node = InstantiationNode()
-        node.children = []
         if ctx.CONST():
             node.const = True
         node.varType = ctx.TYPE()
@@ -76,8 +70,7 @@ class AstVisitor(CVisitor):
         if not ctx.BOOLOPS():
             return self.visitTerm(ctx.term(0))
         node = CompareNode()
-        node.children = []
-        node.operation = ctx.BOOLOPS()
+        node.operation = ctx.BOOLOPS().__str__()
         a = ctx.term(0)
         node.left = self.visitTerm(a)
         if ctx.boolexpression():
@@ -91,8 +84,7 @@ class AstVisitor(CVisitor):
         if not ctx.TERMOPS():
             return self.visitFactor(ctx.factor(0))
         node = TermNode()
-        node.children = []
-        node.operation = ctx.TERMOPS()
+        node.operation = ctx.TERMOPS().__str__()
         node.left = self.visitFactor(ctx.factor(0))
         if ctx.term():
             node.right = self.visitTerm(ctx.term())
@@ -105,8 +97,7 @@ class AstVisitor(CVisitor):
         if not ctx.FACTOROPS():
             return self.visitElement(ctx.element(0))
         node = FactorNode()
-        node.children = []
-        node.operation = ctx.FACTOROPS()
+        node.operation = ctx.FACTOROPS().__str__()
         node.left = self.visitElement(ctx.element(0))
         if ctx.factor():
             node.right = self.visitFactor(ctx.factor())
@@ -130,17 +121,17 @@ class AstVisitor(CVisitor):
         node = None
         if ctx.UNARYOPS() and ctx.SPECIALUNARY():
             node = UnaryNode()
-            node.operation = ctx.UNARYOPS()
+            node.operation = ctx.UNARYOPS().__str__()
             node.variable = SpecialUnaryNode()
             node.variable.type = ctx.SPECIALUNARY()
             node.variable.variable = variable
         elif ctx.UNARYOPS():
             node = UnaryNode()
-            node.operation = ctx.UNARYOPS()
+            node.operation = ctx.UNARYOPS().__str__()
             node.variable = variable
         elif ctx.SPECIALUNARY():
             node = SpecialUnaryNode()
-            node.operation = ctx.SPECIALUNARY()
+            node.operation = ctx.SPECIALUNARY().__str__()
             node.variable = variable
         else:
             return variable
