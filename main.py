@@ -7,6 +7,7 @@ from AstVisitor import *
 from AST import AST
 from Nodes import *
 from AstOptimizer import AstOptimizer
+import pydot
 
 def main(argv):
     input_stream = FileStream("example.txt")
