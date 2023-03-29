@@ -57,6 +57,27 @@ class PointerNode(Node):
     name = ""
 
 
+class LogicNode(Node):
+    type = "logic"
+    operation = ""
+    left = None
+    right = None
+
+    def foldConstant(self):
+        if self.left.type == "literal" and self.right.type == "literal":
+            node = LiteralNode()
+            leftVal = self.left.convertValType()
+            rightVal = self.right.convertValType()
+            node.literalType = "bool"
+
+            if self.operation == "&&":
+                node.value = str(leftVal and rightVal)
+            elif self.operation == "||":
+                node.value = str(leftVal or rightVal)
+            return node
+        return None
+
+
 class CompareNode(Node):
     type = "compare"
     operation = ""
@@ -66,8 +87,8 @@ class CompareNode(Node):
     def foldConstant(self):
         if self.left.type == "literal" and self.right.type == "literal":
             node = LiteralNode()
-            leftVal = self.left.converValType()
-            rightVal = self.right.converValType()
+            leftVal = self.left.convertValType()
+            rightVal = self.right.convertValType()
             node.literalType = "bool"
             if self.operation == "<":
                 node.value = str(leftVal < rightVal)
@@ -220,7 +241,7 @@ class LiteralNode(Node):
         elif self.literalType == "float":
             val = float(val)
         elif self.literalType == "bool":
-            if val == "true":
+            if val == "true" or val == "True":
                 val = True
             else:
                 val = False

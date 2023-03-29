@@ -44,6 +44,16 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#const_instantiation.
+    def visitConst_instantiation(self, ctx:CParser.Const_instantiationContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#logicexpression.
+    def visitLogicexpression(self, ctx:CParser.LogicexpressionContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#boolexpression.
     def visitBoolexpression(self, ctx:CParser.BoolexpressionContext):
         return self.visitChildren(ctx)

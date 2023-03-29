@@ -19,7 +19,8 @@ comment
     | MULTICOMMENT;
 
 assignment
-    : declaration EQUALS boolexpression;
+    : declaration EQUALS logicexpression
+    | const_instantiation EQUALS logicexpression;
 
 declaration
     : instantiation
@@ -27,13 +28,16 @@ declaration
     | POINTER;
 
 instantiation
-    : CONST? TYPE IDENTIFIER;
+    : TYPE IDENTIFIER;
 
-//logicexpression
-//    : '('? boolexpression (LOGICOPS (boolexpression | logicexpression))? ')'?
+const_instantiation
+    : CONST TYPE IDENTIFIER;
+
+logicexpression
+    : '('? boolexpression (LOGICOPS (boolexpression | logicexpression))? ')'?;
 
 boolexpression
-    : '('? term (BOOLOPS (term | boolexpression))? ')'?;
+    : term (COMPOPS (term | boolexpression))?;
 
 term
     : factor (TERMOPS (factor | term))?;
@@ -43,10 +47,6 @@ factor
 
 element
     : (UNARYOPS)? (literal | IDENTIFIER | POINTER | '(' boolexpression ')') SPECIALUNARY?;
-
-BOOLOPS
-    : LOGICOPS
-    | COMPOPS;
 
 COMPOPS
     : '<' | '>' | '<=' | '>=' | '==' | '!=';
