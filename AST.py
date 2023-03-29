@@ -9,11 +9,9 @@ import graphviz
 class AST:
     root = Node
 
+    # Define the visualize function
     def vis(self):
-        self.ast_to_dot(self.root)
-
-    # Define the ast_to_dot function
-    def ast_to_dot(self, node):
+        node = self.root
         # Create a new Digraph object
         dot = graphviz.Digraph()
 
