@@ -42,7 +42,7 @@ class AstVisitor(CVisitor):
     def visitAssignment(self, ctx: CParser.AssignmentContext):
         node = AssignmentNode()
         node.left = self.visitDeclaration(ctx.declaration())
-        node.right = self.visitBoolexpression(ctx.boolexpression())
+        node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
         return node
 
@@ -66,17 +66,39 @@ class AstVisitor(CVisitor):
         node.name = ctx.IDENTIFIER()
         return node
 
-    def visitBoolexpression(self, ctx: CParser.BoolexpressionContext):
-        if not ctx.BOOLOPS():
-            return self.visitTerm(ctx.term(0))
-        node = CompareNode()
-        node.operation = ctx.BOOLOPS().__str__()
-        a = ctx.term(0)
-        node.left = self.visitTerm(a)
-        if ctx.boolexpression():
-            node.right = self.visitBoolexpression(ctx.boolexpression())
+    def visitLogicexpression(self, ctx:CParser.LogicexpressionContext):
+        if not ctx.LOGICOPS():
+            return self.visitBoolexpression(ctx.boolexpression(0))
+        node = LogicNode()
+        node.operation = ctx.LOGICOPS().__str__()
+        a = ctx.boolexpression(0)
+        node.left = self.visitBoolexpression(a)
+        if ctx.logicexpression():
+            node.right = self.visitLogicexpression(ctx.logicexpression())
         else:
+            node.right = self.visitBoolexpression(ctx.boolexpression(1))
+        node.children = [node.left, node.right]
+        return node
+
+    def visitBoolexpression(self, ctx: CParser.BoolexpressionContext):
+        if not ctx.COMPOPS():
+            return self.visitTerm(ctx.term(0))
+        if not ctx.boolexpression():
+            node = CompareNode()
+            node.operation = ctx.COMPOPS().__str__()
+            node.left = self.visitTerm(ctx.term(0))
             node.right = self.visitTerm(ctx.term(1))
+            node.children = [node.left, node.right]
+            return node
+        node = LogicNode()
+        node.operation = "&&"
+        compNode1 = CompareNode()
+        compNode1.operation = ctx.COMPOPS().__str__()
+        compNode2 = self.visitBoolexpression(ctx.boolexpression())
+        compNode1.left = self.visitTerm(ctx.term(0))
+        compNode1.right = compNode2.left
+        node.left = compNode1
+        node.right = compNode2
         node.children = [node.left, node.right]
         return node
 

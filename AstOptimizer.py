@@ -13,8 +13,8 @@ class AstOptimizer:
         folded = False
         for i in range(len(node.children)):
             childNode = node.children[i]
-            if (childNode.type == "compare" or childNode.type == "term" or childNode.type == "factor"
-                    or childNode.type == "unary" or childNode.type == "special_unary"):
+            if (childNode.type == "logic" or childNode.type == "compare" or childNode.type == "term"
+                    or childNode.type == "factor" or childNode.type == "unary" or childNode.type == "special_unary"):
                 result = childNode.foldConstant()
                 if result is not None:
                     node.children[i] = result

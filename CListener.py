@@ -71,6 +71,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#logicexpression.
+    def enterLogicexpression(self, ctx:CParser.LogicexpressionContext):
+        pass
+
+    # Exit a parse tree produced by CParser#logicexpression.
+    def exitLogicexpression(self, ctx:CParser.LogicexpressionContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#boolexpression.
     def enterBoolexpression(self, ctx:CParser.BoolexpressionContext):
         pass
