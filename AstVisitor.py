@@ -60,13 +60,19 @@ class AstVisitor(CVisitor):
 
     def visitInstantiation(self, ctx: CParser.InstantiationContext):
         node = InstantiationNode()
-        if ctx.CONST():
-            node.const = True
+        node.const = False
         node.varType = ctx.TYPE()
         node.name = ctx.IDENTIFIER()
         return node
 
-    def visitLogicexpression(self, ctx:CParser.LogicexpressionContext):
+    def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
+        node = InstantiationNode()
+        node.const = True
+        node.varType = ctx.TYPE()
+        node.name = ctx.IDENTIFIER()
+        return node
+
+    def visitLogicexpression(self, ctx: CParser.LogicexpressionContext):
         if not ctx.LOGICOPS():
             return self.visitBoolexpression(ctx.boolexpression(0))
         node = LogicNode()

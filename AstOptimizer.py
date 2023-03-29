@@ -3,6 +3,13 @@ from Nodes import *
 
 
 class AstOptimizer:
+    def optimize(self, tree):
+        self.constantPropagation(tree)
+        self.constantFolding(tree)
+
+    def constantPropagation(self, tree: AST):
+        pass
+
     def constantFolding(self, tree: AST):
         folded = True
         while folded:

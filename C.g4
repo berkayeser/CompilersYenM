@@ -19,7 +19,8 @@ comment
     | MULTICOMMENT;
 
 assignment
-    : declaration EQUALS logicexpression;
+    : declaration EQUALS logicexpression
+    | const_instantiation EQUALS logicexpression;
 
 declaration
     : instantiation
@@ -27,7 +28,10 @@ declaration
     | POINTER;
 
 instantiation
-    : CONST? TYPE IDENTIFIER;
+    : TYPE IDENTIFIER;
+
+const_instantiation
+    : CONST TYPE IDENTIFIER;
 
 logicexpression
     : '('? boolexpression (LOGICOPS (boolexpression | logicexpression))? ')'?;
