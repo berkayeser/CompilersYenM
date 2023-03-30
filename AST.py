@@ -6,8 +6,9 @@ import pydot
 import matplotlib.pyplot as plt
 import graphviz
 
+
 class AST:
-    root = Node
+    root = None
 
     # Define the visualize function
     def vis(self):
@@ -44,3 +45,5 @@ class AST:
         (graph,) = pydot.graph_from_dot_file(dotfilename)
         graph.write_png('ASTpng.png')
 
+    def generateLLVM(self, llvm):
+        self.root.generateCode(llvm)

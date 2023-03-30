@@ -16,15 +16,24 @@ class Node:
     def getASTvalue(self):
         return self.type
 
+    def generateCode(self, llvm):
+        pass
+
 
 class RunNode(Node):
     type = "run"
+
+    def generateCode(self, llvm):
+        return llvm.visitRun(self)
 
 
 class LineNode(Node):
     type = "line"
     statement = None
     comment = None
+
+    def generateCode(self, llvm):
+        return llvm.visitLine(self)
 
 
 class StatementNode(Node):
@@ -34,6 +43,9 @@ class StatementNode(Node):
     def getASTvalue(self):
         return self.instruction
 
+    def generateCode(self, llvm):
+        return llvm.visitStatement(self)
+
 
 class CommentNode(Node):
     type = "comment"
@@ -42,11 +54,17 @@ class CommentNode(Node):
     def getASTvalue(self):
         return self.text
 
+    def generateCode(self, llvm):
+        return llvm.visitComment(self)
+
 
 class AssignmentNode(Node):
     type = "assignment"
     left = None
     right = None
+
+    def generateCode(self, llvm):
+        return llvm.visitAssignment(self)
 
 
 class InstantiationNode(Node):
@@ -58,6 +76,9 @@ class InstantiationNode(Node):
     def getASTvalue(self):
         return str(self.name)
 
+    def generateCode(self, llvm):
+        return llvm.visitInstantiation(self)
+
 
 class VariableNode(Node):
     type = "variable"
@@ -65,6 +86,9 @@ class VariableNode(Node):
 
     def getASTvalue(self):
         return str(self.name)
+
+    def generateCode(self, llvm):
+        return llvm.visitVariable(self)
 
 
 class PointerNode(Node):
@@ -91,6 +115,9 @@ class LogicNode(Node):
                 node.value = str(leftVal or rightVal)
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitLogic(self)
 
 
 class CompareNode(Node):
@@ -119,6 +146,9 @@ class CompareNode(Node):
                 node.value = str(leftVal > rightVal)
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitCompare(self)
 
 
 class TermNode(Node):
@@ -150,11 +180,14 @@ class TermNode(Node):
                 rightVal = ord(temp)
 
             if self.operation == "+":
-                node.value = leftVal + rightVal
+                node.value = str(leftVal + rightVal)
             elif self.operation == "-":
-                node.value = leftVal - rightVal
+                node.value = str(leftVal - rightVal)
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitTerm(self)
 
 
 class FactorNode(Node):
@@ -186,13 +219,21 @@ class FactorNode(Node):
                 rightVal = ord(temp)
 
             if self.operation == "*":
-                node.value = leftVal * rightVal
+                node.value = str(leftVal * rightVal)
             elif self.operation == "/":
-                node.value = leftVal / rightVal
+                if not (leftVal/rightVal).is_integer():
+                    node.literalType = "float"
+                    node.value = str(leftVal / rightVal)
+                else:
+                    node.value = str(int(leftVal / rightVal))
+
             elif self.operation == "%":
-                node.value = leftVal % rightVal
+                node.value = str(leftVal % rightVal)
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitFactor(self)
 
 
 class UnaryNode(Node):
@@ -217,14 +258,17 @@ class UnaryNode(Node):
             if valType == "char":
                 val = ord(val[1:-1])
             if self.operation == "-":
-                node.value = -val
+                node.value = str(-val)
             elif self.operation == "!":
                 node.literalType = "bool"
-                node.value = not val
+                node.value = str(not val)
             elif self.operation == "&":
                 return None
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitUnary(self)
 
 
 class SpecialUnaryNode(Node):
@@ -246,11 +290,14 @@ class SpecialUnaryNode(Node):
             if valType == "char":
                 val = ord(val[1:-1])
             if self.operation == "--":
-                node.value = val-1
+                node.value = str(val-1)
             elif self.operation == "++":
-                node.value = val+1
+                node.value = str(val+1)
             return node
         return None
+
+    def generateCode(self, llvm):
+        return llvm.visitSpecialUnary(self)
 
 
 class LiteralNode(Node):
@@ -260,6 +307,7 @@ class LiteralNode(Node):
 
     def getASTvalue(self):
         return str(self.value)
+
     def convertValType(self):
         val = self.value
         if self.literalType == "int":
@@ -272,3 +320,6 @@ class LiteralNode(Node):
             else:
                 val = False
         return val
+
+    def generateCode(self, llvm):
+        return llvm.visitLiteral(self)
