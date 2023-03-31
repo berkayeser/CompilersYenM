@@ -13,13 +13,13 @@ def main(argv):
 
     visitor = AstVisitor()
     ast = AST()
-    # optimizer = AstOptimizer()
+    optimizer = AstOptimizer()
 
     ast.root = visitor.visit(tree)
-    # ast = optimizer.constantFolding(ast)
+    ast = optimizer.constantFolding(ast)
 
-    llvm = LLVMVisitor()
-    ast.generateLLVM(llvm)
+    # llvm = LLVMVisitor()
+    # ast.generateLLVM(llvm)
 
     ast.vis()
 

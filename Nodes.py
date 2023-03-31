@@ -27,6 +27,11 @@ class RunNode(Node):
         return llvm.visitRun(self)
 
 
+class PrintNode(Node):
+    type = "print"
+    text = ""
+
+
 class LineNode(Node):
     type = "line"
     statement = None

@@ -21,11 +21,13 @@ class AstVisitor(CVisitor):
             node.children.append(node.comment)
         return node
 
-    # def visitPrint(self, ctx:CParser.PrintContext):
-    #     node = PrintNode()
-    #     if ctx.literal():
-    #         node.variable =
-    #     elif ctx.IDENTIFIER():
+    def visitPrint(self, ctx: CParser.PrintContext):
+        node = PrintNode()
+        if ctx.literal():
+            node.variable = ctx.literal().__str__()
+        elif ctx.IDENTIFIER():
+            node.variable = ctx.IDENTIFIER().__str__()
+        return node
 
     def visitComment(self, ctx: CParser.CommentContext):
         node = CommentNode()
@@ -41,6 +43,8 @@ class AstVisitor(CVisitor):
             node.children = [self.visitDeclaration(ctx.declaration())]
         elif ctx.logicexpression():
             node.children = [self.visitLogicexpression(ctx.logicexpression())]
+        elif ctx.print_():
+            node.children = [self.visitPrint(ctx.print_())]
         else:
             node.children = [ctx.getText()]
         return node

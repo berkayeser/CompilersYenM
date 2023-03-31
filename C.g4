@@ -15,7 +15,7 @@ statement
     | print ';' ;
 
 print
-    : 'printf' '(' (IDENTIFIER | literal) ')' ';';
+    : 'printf' '(' (IDENTIFIER | literal) ')';
 
 comment
     : SINGLECOMMENT
