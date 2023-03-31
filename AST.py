@@ -18,7 +18,7 @@ class AST:
 
         # Define a recursive function to visit each node in the AST
         def visit(node, parent=None):
-            # Assign a unique ID to the node based on its memory address
+            # Assign a unique ID to the node gebaseerd op zijn memory address
             id = str(hash(node))
             # Label the node with its class name
             label = node.getASTvalue()
@@ -42,6 +42,7 @@ class AST:
         dotfilename = 'ast.dot'
         with open(dotfilename, 'w') as f:
             f.write(dot.source)
+        # Convert the Dot file to a graphViz graph with Pydot
         (graph,) = pydot.graph_from_dot_file(dotfilename)
         graph.write_png('ASTpng.png')
 
