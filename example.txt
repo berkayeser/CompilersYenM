@@ -1,1 +1,1 @@
-printf(result); //show the result
+const int x = 1;

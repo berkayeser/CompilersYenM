@@ -18,8 +18,9 @@ def main(argv):
     ast.root = visitor.visit(tree)
     ast = optimizer.constantFolding(ast)
 
-    # llvm = LLVMVisitor()
-    # ast.generateLLVM(llvm)
+    llvm = LLVMVisitor()
+    llvm.file = "example.ll"
+    ast.generateLLVM(llvm)
 
     ast.vis()
 

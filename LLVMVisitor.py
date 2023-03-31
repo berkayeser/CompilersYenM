@@ -20,6 +20,9 @@ class LLVMVisitor:
     function = ir.Function(module, func_type, name="main")
     block = function.append_basic_block("entry")
 
+    def __init__(self):
+        file = ""
+
     def visitRun(self, node: RunNode):
         for child in node.children:
             child.generateCode(self)
@@ -52,21 +55,13 @@ class LLVMVisitor:
         variable = None
         builder = ir.IRBuilder(self.block)
         if node.varType == "float":
-            variable = builder.alloca(ir.FloatType(), name="g")
+            variable = builder.alloca(ir.FloatType(), name=node.name)
         else:
-            variable = builder.alloca(ir.IntType(32), name="g")
-            builder.store(ir.Constant(ir.IntType(32), 0), variable)
+            variable = builder.alloca(ir.IntType(32), name=node.name)
         return variable
 
     def visitVariable(self, node: VariableNode):
-        builder = ir.IRBuilder(self.block)
-        variable = builder.alloca(ir.FloatType(), name="my_variable")
-        function = ir.Function(self.module, ir.FunctionType(ir.VoidType(), []), "my_function")
-
-        # Get the variable by name using get_global
-        retrieved_variable = self.module.get_global("my_variable")
-        assert retrieved_variable is variable
-        return self.module.get_global(name="g")
+        return self.module.get_global(name=node.name)
 
     def visitLiteral(self, node: LiteralNode):
         value = node.convertValType()

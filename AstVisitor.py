@@ -51,7 +51,10 @@ class AstVisitor(CVisitor):
 
     def visitAssignment(self, ctx: CParser.AssignmentContext):
         node = AssignmentNode()
-        node.left = self.visitDeclaration(ctx.declaration())
+        if ctx.declaration():
+            node.left = self.visitDeclaration(ctx.declaration())
+        elif ctx.const_instantiation():
+            node.left = self.visitConst_instantiation(ctx.const_instantiation())
         node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
         return node
