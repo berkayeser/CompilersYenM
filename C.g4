@@ -11,8 +11,11 @@ line
 statement
     : assignment ';'
     | declaration ';'
-    | boolexpression ';'
-    | 'printf' '(' (IDENTIFIER | literal) ')' ';';
+    | logicexpression ';'
+    | print ';' ;
+
+print
+    : 'printf' '(' (IDENTIFIER | literal) ')' ';';
 
 comment
     : SINGLECOMMENT
@@ -111,8 +114,9 @@ SINGLESTRING
 DOUBLESTRING
     : '"' .*? '"';
 
+// add ? bij endl
 SINGLECOMMENT
-    : '//' ~[\r\n]* ('\r' | '\n');
+    : '//' ~[\r\n]* ('\r' | '\n')?;
 
 MULTICOMMENT
     : '/*' .*? '*/';
