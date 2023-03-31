@@ -1,0 +1,4 @@
+int x = 5;
+int* p = &x;
+p = p * 3;
+int y  = *(p+5);
