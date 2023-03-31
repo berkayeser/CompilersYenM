@@ -1,9 +1,12 @@
 from CVisitor import *
 from CParser import *
 from Nodes import *
-
+from SemanticVisitor import SymboolTabel
 
 class AstVisitor(CVisitor):
+    def __init__(self):
+        self.symbol_table = SymboolTabel()
+
     def visitRun(self, ctx: CParser.RunContext):
         node = RunNode()
         lines = ctx.line()
@@ -57,15 +60,49 @@ class AstVisitor(CVisitor):
             node.left = self.visitConst_instantiation(ctx.const_instantiation())
         node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
+
+        # Operations of incompatible types "inta;floatb;a=b;" zie BB
+
+        # Assignments of incompatible types "inta=1;floatb=a;" OF "inta;floatb;a=b;"
+        # bv "int a; float b; a=b;"
+        if node.left.type == "variable" and node.right.type == "variable":
+            nodeLn = str(node.left.name)
+            nodeRn = str(node.right.name)
+            nodeLt = self.symbol_table.get_symbol(nodeLn)['type']
+            nodeRt = self.symbol_table.get_symbol(nodeRn)['type']
+            if nodeLt != nodeRt:
+                raise Exception(f"Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+
+        # bv "int a = 1; float b = a;"
+        if node.left.type == "instantiation" and node.right.type == "variable":
+            nodeLn = str(node.left.name)
+            nodeRn = str(node.right.name)
+            nodeLt = str(node.left.varType)
+            nodeRt = self.symbol_table.get_symbol(nodeRn)['type']
+
+            if node.left.const:
+                nodeLt = "const" + nodeLt
+
+            if nodeLt != nodeRt:
+                raise Exception(f"During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+
+
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
         node = None
         if ctx.instantiation():
             node = self.visitInstantiation(ctx.instantiation())
-        elif ctx.IDENTIFIER():
+        elif ctx.IDENTIFIER(): # bv x:var = 3
             node = VariableNode()
             node.name = ctx.getText()
+
+            # Use of an undefined variable
+            type1 = self.symbol_table.get_symbol(str(node.name), "undef")['type']
+            # Assignment to a const variable.
+            if type1[0:5] == "const":
+                raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
+
         elif ctx.POINTER():
             node = PointerNode()
             node.name = ctx.getText()
@@ -76,6 +113,10 @@ class AstVisitor(CVisitor):
         node.const = False
         node.varType = ctx.TYPE()
         node.name = ctx.IDENTIFIER().__str__()
+
+        # (Checking for) Redeclaration or redefinition of an existing variable
+        self.symbol_table.add_symbol(str(node.name), str(node.varType))
+
         return node
 
     def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
@@ -83,6 +124,10 @@ class AstVisitor(CVisitor):
         node.const = True
         node.varType = ctx.TYPE()
         node.name = ctx.IDENTIFIER().__str__()
+
+        # (Checking for) Redeclaration or redefinition of an existing variable
+        self.symbol_table.add_symbol(str(node.name), "const"+str(node.varType))
+
         return node
 
     def visitLogicexpression(self, ctx: CParser.LogicexpressionContext):
@@ -151,8 +196,12 @@ class AstVisitor(CVisitor):
         variable = None
         if ctx.literal():
             variable = self.visitLiteral(ctx.literal())
-        elif ctx.IDENTIFIER():
+        elif ctx.IDENTIFIER(): # ... = x: var
             variable = VariableNode()
+            variable.name = ctx.IDENTIFIER()
+
+            # Use of an uninitialized variable
+            self.symbol_table.get_symbol(str(variable.name), "unint")
             variable.name = ctx.IDENTIFIER().__str__()
         elif ctx.POINTER():
             variable = PointerNode()

@@ -11,6 +11,7 @@ def main(argv):
     for filename in os.listdir(directory_path):
         file_path = os.path.join(directory_path, filename)
         if os.path.isfile(file_path):
+            print("Entering: "+ file_path)
             input_stream = FileStream(file_path)
             lexer = CLexer(input_stream)
             tokens = CommonTokenStream(lexer)
@@ -21,7 +22,10 @@ def main(argv):
             ast = AST()
             optimizer = AstOptimizer()
 
+
             ast.root = visitor.visit(tree)
+
+            # visitor.symbol_table.st_print()
 
             llvm = LLVMVisitor()
             llvm.file = "tests/ll_files/test_1.ll"
@@ -29,7 +33,9 @@ def main(argv):
                 ast = optimizer.constantFolding(ast)
             else:
                 ast.generateLLVM(llvm)
+
             ast.vis()
+
 
 
 

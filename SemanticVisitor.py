@@ -15,7 +15,7 @@ class SymboolTabel:
         else:
             self.scopes[self.curScope][name] = {'type': type, 'scope': scope}
             #self.scopes[-1][name] = {'type': type, 'scope': scope}
-
+            #print(f"{name} , with type {type} added.")
     def get_symbol(self, name, errortype= None):
         for scope in reversed(self.scopes):
             if name in scope:
