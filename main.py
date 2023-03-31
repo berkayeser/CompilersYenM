@@ -6,8 +6,11 @@ from AST import AST
 from AstOptimizer import AstOptimizer
 from LLVMVisitor import LLVMVisitor
 
+# Test script that automatically runs our Compiler on specified C files.
+# Just run "python3 main.py"
 def main(argv):
     directory_path = "tests/text_files"
+    fid = 1
     for filename in os.listdir(directory_path):
         file_path = os.path.join(directory_path, filename)
         if os.path.isfile(file_path):
@@ -22,9 +25,7 @@ def main(argv):
             ast = AST()
             optimizer = AstOptimizer()
 
-
             ast.root = visitor.visit(tree)
-
             # visitor.symbol_table.st_print()
 
             llvm = LLVMVisitor()
@@ -34,7 +35,8 @@ def main(argv):
             else:
                 ast.generateLLVM(llvm)
 
-            ast.vis()
+            ast.vis(fid)
+            fid +=1
 
 
 

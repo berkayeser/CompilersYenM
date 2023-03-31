@@ -11,7 +11,7 @@ class AST:
     root = None
 
     # Define the visualize function
-    def vis(self):
+    def vis(self, fid: int):
         node = self.root
         # Create a new Digraph object
         dot = graphviz.Digraph()
@@ -39,12 +39,12 @@ class AST:
         # Return the DOT code as a string
         # return dot.source
 
-        dotfilename = 'ast.dot'
+        dotfilename = f'output/ast{fid}.dot'
         with open(dotfilename, 'w') as f:
             f.write(dot.source)
         # Convert the Dot file to a graphViz graph with Pydot
         (graph,) = pydot.graph_from_dot_file(dotfilename)
-        graph.write_png('ASTpng.png')
+        graph.write_png(f'output/AST{fid}png.png')
 
     def generateLLVM(self, llvm):
         self.root.generateCode(llvm)
