@@ -21,6 +21,12 @@ class AstVisitor(CVisitor):
             node.children.append(node.comment)
         return node
 
+    # def visitPrint(self, ctx:CParser.PrintContext):
+    #     node = PrintNode()
+    #     if ctx.literal():
+    #         node.variable =
+    #     elif ctx.IDENTIFIER():
+
     def visitComment(self, ctx: CParser.CommentContext):
         node = CommentNode()
         node.text = ctx.getText()
@@ -33,8 +39,8 @@ class AstVisitor(CVisitor):
             node.children = [self.visitAssignment(ctx.assignment())]
         elif ctx.declaration():
             node.children = [self.visitDeclaration(ctx.declaration())]
-        elif ctx.boolexpression():
-            node.children = [self.visitBoolexpression(ctx.boolexpression())]
+        elif ctx.logicexpression():
+            node.children = [self.visitLogicexpression(ctx.logicexpression())]
         else:
             node.children = [ctx.getText()]
         return node
@@ -62,14 +68,14 @@ class AstVisitor(CVisitor):
         node = InstantiationNode()
         node.const = False
         node.varType = ctx.TYPE()
-        node.name = ctx.IDENTIFIER()
+        node.name = ctx.IDENTIFIER().__str__()
         return node
 
     def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
         node = InstantiationNode()
         node.const = True
         node.varType = ctx.TYPE()
-        node.name = ctx.IDENTIFIER()
+        node.name = ctx.IDENTIFIER().__str__()
         return node
 
     def visitLogicexpression(self, ctx: CParser.LogicexpressionContext):
@@ -140,10 +146,10 @@ class AstVisitor(CVisitor):
             variable = self.visitLiteral(ctx.literal())
         elif ctx.IDENTIFIER():
             variable = VariableNode()
-            variable.name = ctx.IDENTIFIER()
+            variable.name = ctx.IDENTIFIER().__str__()
         elif ctx.POINTER():
             variable = PointerNode()
-            variable.name = ctx.POINTER()
+            variable.name = ctx.POINTER().__str__()
         elif ctx.boolexpression():
             variable = self.visitBoolexpression(ctx.boolexpression())
         node = None

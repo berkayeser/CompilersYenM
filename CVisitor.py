@@ -24,6 +24,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#print.
+    def visitPrint(self, ctx:CParser.PrintContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#comment.
     def visitComment(self, ctx:CParser.CommentContext):
         return self.visitChildren(ctx)

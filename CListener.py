@@ -35,6 +35,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#print.
+    def enterPrint(self, ctx:CParser.PrintContext):
+        pass
+
+    # Exit a parse tree produced by CParser#print.
+    def exitPrint(self, ctx:CParser.PrintContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#comment.
     def enterComment(self, ctx:CParser.CommentContext):
         pass
