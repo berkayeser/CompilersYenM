@@ -21,14 +21,16 @@ class LLVMVisitor:
     block = function.append_basic_block("entry")
 
     def __init__(self):
-        file = ""
+        self.file = ""
 
     def visitRun(self, node: RunNode):
         for child in node.children:
             child.generateCode(self)
         builder = ir.IRBuilder(self.block)
         builder.ret(ir.Constant(ir.IntType(1), 0))
-        print(str(self.module))
+        file = open(self.file, "w")
+        file.write(str(self.module))
+        file.close()
 
     def visitLine(self, node: LineNode):
         if node.comment:
