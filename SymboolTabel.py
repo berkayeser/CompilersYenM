@@ -1,10 +1,8 @@
-
 class SymboolTabel:
     def __init__(self):
         self.scopes = list()
         self.scopes.append(dict())
         self.curScope: int = 0
-
 
     def add_symbol(self, name, type, scope=0):
         if name in self.scopes[self.curScope]:
@@ -16,6 +14,7 @@ class SymboolTabel:
             self.scopes[self.curScope][name] = {'type': type, 'scope': scope}
             #self.scopes[-1][name] = {'type': type, 'scope': scope}
             #print(f"{name} , with type {type} added.")
+
     def get_symbol(self, name, errortype= None):
         for scope in reversed(self.scopes):
             if name in scope:
@@ -27,7 +26,6 @@ class SymboolTabel:
             raise Exception(f"Symbol '{name}' is uninitialized")
         else:
             raise Exception(f"Symbol '{name}' is ?????????")
-
 
     def open_scope(self):
         self.scopes.append({})

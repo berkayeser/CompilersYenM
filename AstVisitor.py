@@ -1,18 +1,22 @@
-from CVisitor import *
-from CParser import *
+from Antlr.CVisitor import *
+from Antlr.CParser import *
 from Nodes import *
-from SemanticVisitor import SymboolTabel
+from AST import AST
+from SymboolTabel import SymboolTabel
+
 
 class AstVisitor(CVisitor):
     def __init__(self):
         self.symbol_table = SymboolTabel()
 
     def visitRun(self, ctx: CParser.RunContext):
+        ast = AST()
         node = RunNode()
         lines = ctx.line()
         for line in lines:
             node.children.append(self.visitLine(line))
-        return node
+        ast.root = node
+        return ast
 
     def visitLine(self, ctx: CParser.LineContext):
         node = LineNode()
@@ -27,9 +31,9 @@ class AstVisitor(CVisitor):
     def visitPrint(self, ctx: CParser.PrintContext):
         node = PrintNode()
         if ctx.literal():
-            node.variable = ctx.literal().__str__()
+            node.toPrint = ctx.literal().__str__()
         elif ctx.IDENTIFIER():
-            node.variable = ctx.IDENTIFIER().__str__()
+            node.toPrint = ctx.IDENTIFIER().__str__()
         return node
 
     def visitComment(self, ctx: CParser.CommentContext):
@@ -86,7 +90,6 @@ class AstVisitor(CVisitor):
             if nodeLt != nodeRt:
                 raise Exception(f"During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
 
-
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
@@ -111,7 +114,7 @@ class AstVisitor(CVisitor):
     def visitInstantiation(self, ctx: CParser.InstantiationContext):
         node = InstantiationNode()
         node.const = False
-        node.varType = ctx.TYPE()
+        node.varType = ctx.TYPE().__str__()
         node.name = ctx.IDENTIFIER().__str__()
 
         # (Checking for) Redeclaration or redefinition of an existing variable
@@ -122,7 +125,7 @@ class AstVisitor(CVisitor):
     def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
         node = InstantiationNode()
         node.const = True
-        node.varType = ctx.TYPE()
+        node.varType = ctx.TYPE().__str__()
         node.name = ctx.IDENTIFIER().__str__()
 
         # (Checking for) Redeclaration or redefinition of an existing variable
@@ -238,6 +241,4 @@ class AstVisitor(CVisitor):
             node.literalType = 'float'
         elif ctx.CHARLITERAL():
             node.literalType = 'char'
-        elif ctx.STRINGLITERAL():
-            node.literalType = 'string'
         return node
