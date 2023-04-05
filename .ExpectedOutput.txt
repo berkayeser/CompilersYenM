@@ -1,0 +1,3 @@
+All files should execute flawlessly except for file tests/text_files\test_5.txt. This will give an error warning because it doesnt fully comply to the grammar.
+
+Additionally, we realize that our documentation and especially our test cases are quite limited. This is due to being in a shortage of time and having a preference to implement the essential features rather than the the tests demonstrating the features.  
