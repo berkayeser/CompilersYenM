@@ -82,15 +82,18 @@ EQUALS : '=';
 POINTER
     : '*'+ IDENTIFIER;
 
-IDENTIFIER
-    : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
-
 literal
     : BOOLLITERAL
     | INTLITERAL
     | FLOATLITERAL
-    | CHARLITERAL
-    | STRINGLITERAL;
+    | CHARLITERAL;
+
+BOOLLITERAL
+    : 'true' | 'false';
+
+IDENTIFIER
+    : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
+
 
 INTLITERAL
     : DIGIT+;
@@ -98,23 +101,11 @@ INTLITERAL
 FLOATLITERAL
     : DIGIT+ ((',' | '.') DIGIT+)?;
 
-BOOLLITERAL
-    : 'true' | 'false';
+
 
 CHARLITERAL
     : '\'' . '\'';
 
-STRINGLITERAL
-    : SINGLESTRING
-    | DOUBLESTRING;
-
-SINGLESTRING
-    : '\'' . . .*? '\'';
-
-DOUBLESTRING
-    : '"' .*? '"';
-
-// add ? bij endl
 SINGLECOMMENT
     : '//' ~[\r\n]* ('\r' | '\n')?;
 

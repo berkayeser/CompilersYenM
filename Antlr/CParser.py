@@ -10,7 +10,7 @@ else:
 
 def serializedATN():
     return [
-        4,1,30,144,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,27,144,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,1,0,4,0,32,8,0,11,0,12,0,33,1,1,1,1,3,1,38,8,1,1,1,3,1,
         41,8,1,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,55,8,
@@ -21,26 +21,26 @@ def serializedATN():
         11,1,11,1,11,1,11,3,11,115,8,11,3,11,117,8,11,1,12,1,12,1,12,1,12,
         3,12,123,8,12,3,12,125,8,12,1,13,3,13,128,8,13,1,13,1,13,1,13,1,
         13,1,13,1,13,1,13,3,13,137,8,13,1,13,3,13,140,8,13,1,14,1,14,1,14,
-        0,0,15,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,0,2,1,0,27,28,1,0,
-        20,24,153,0,31,1,0,0,0,2,40,1,0,0,0,4,54,1,0,0,0,6,56,1,0,0,0,8,
-        64,1,0,0,0,10,74,1,0,0,0,12,79,1,0,0,0,14,81,1,0,0,0,16,84,1,0,0,
-        0,18,89,1,0,0,0,20,102,1,0,0,0,22,110,1,0,0,0,24,118,1,0,0,0,26,
-        127,1,0,0,0,28,141,1,0,0,0,30,32,3,2,1,0,31,30,1,0,0,0,32,33,1,0,
-        0,0,33,31,1,0,0,0,33,34,1,0,0,0,34,1,1,0,0,0,35,37,3,4,2,0,36,38,
-        3,8,4,0,37,36,1,0,0,0,37,38,1,0,0,0,38,41,1,0,0,0,39,41,3,8,4,0,
-        40,35,1,0,0,0,40,39,1,0,0,0,41,3,1,0,0,0,42,43,3,10,5,0,43,44,5,
-        1,0,0,44,55,1,0,0,0,45,46,3,12,6,0,46,47,5,1,0,0,47,55,1,0,0,0,48,
-        49,3,18,9,0,49,50,5,1,0,0,50,55,1,0,0,0,51,52,3,6,3,0,52,53,5,1,
-        0,0,53,55,1,0,0,0,54,42,1,0,0,0,54,45,1,0,0,0,54,48,1,0,0,0,54,51,
-        1,0,0,0,55,5,1,0,0,0,56,57,5,2,0,0,57,60,5,3,0,0,58,61,5,19,0,0,
-        59,61,3,28,14,0,60,58,1,0,0,0,60,59,1,0,0,0,61,62,1,0,0,0,62,63,
+        0,0,15,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,0,2,1,0,24,25,2,0,
+        19,19,21,23,153,0,31,1,0,0,0,2,40,1,0,0,0,4,54,1,0,0,0,6,56,1,0,
+        0,0,8,64,1,0,0,0,10,74,1,0,0,0,12,79,1,0,0,0,14,81,1,0,0,0,16,84,
+        1,0,0,0,18,89,1,0,0,0,20,102,1,0,0,0,22,110,1,0,0,0,24,118,1,0,0,
+        0,26,127,1,0,0,0,28,141,1,0,0,0,30,32,3,2,1,0,31,30,1,0,0,0,32,33,
+        1,0,0,0,33,31,1,0,0,0,33,34,1,0,0,0,34,1,1,0,0,0,35,37,3,4,2,0,36,
+        38,3,8,4,0,37,36,1,0,0,0,37,38,1,0,0,0,38,41,1,0,0,0,39,41,3,8,4,
+        0,40,35,1,0,0,0,40,39,1,0,0,0,41,3,1,0,0,0,42,43,3,10,5,0,43,44,
+        5,1,0,0,44,55,1,0,0,0,45,46,3,12,6,0,46,47,5,1,0,0,47,55,1,0,0,0,
+        48,49,3,18,9,0,49,50,5,1,0,0,50,55,1,0,0,0,51,52,3,6,3,0,52,53,5,
+        1,0,0,53,55,1,0,0,0,54,42,1,0,0,0,54,45,1,0,0,0,54,48,1,0,0,0,54,
+        51,1,0,0,0,55,5,1,0,0,0,56,57,5,2,0,0,57,60,5,3,0,0,58,61,5,20,0,
+        0,59,61,3,28,14,0,60,58,1,0,0,0,60,59,1,0,0,0,61,62,1,0,0,0,62,63,
         5,4,0,0,63,7,1,0,0,0,64,65,7,0,0,0,65,9,1,0,0,0,66,67,3,12,6,0,67,
         68,5,17,0,0,68,69,3,18,9,0,69,75,1,0,0,0,70,71,3,16,8,0,71,72,5,
         17,0,0,72,73,3,18,9,0,73,75,1,0,0,0,74,66,1,0,0,0,74,70,1,0,0,0,
-        75,11,1,0,0,0,76,80,3,14,7,0,77,80,5,19,0,0,78,80,5,18,0,0,79,76,
+        75,11,1,0,0,0,76,80,3,14,7,0,77,80,5,20,0,0,78,80,5,18,0,0,79,76,
         1,0,0,0,79,77,1,0,0,0,79,78,1,0,0,0,80,13,1,0,0,0,81,82,5,7,0,0,
-        82,83,5,19,0,0,83,15,1,0,0,0,84,85,5,16,0,0,85,86,5,7,0,0,86,87,
-        5,19,0,0,87,17,1,0,0,0,88,90,5,3,0,0,89,88,1,0,0,0,89,90,1,0,0,0,
+        82,83,5,20,0,0,83,15,1,0,0,0,84,85,5,16,0,0,85,86,5,7,0,0,86,87,
+        5,20,0,0,87,17,1,0,0,0,88,90,5,3,0,0,89,88,1,0,0,0,89,90,1,0,0,0,
         90,91,1,0,0,0,91,97,3,20,10,0,92,95,5,6,0,0,93,96,3,20,10,0,94,96,
         3,18,9,0,95,93,1,0,0,0,95,94,1,0,0,0,96,98,1,0,0,0,97,92,1,0,0,0,
         97,98,1,0,0,0,98,100,1,0,0,0,99,101,5,4,0,0,100,99,1,0,0,0,100,101,
@@ -53,7 +53,7 @@ def serializedATN():
         123,3,26,13,0,121,123,3,24,12,0,122,120,1,0,0,0,122,121,1,0,0,0,
         123,125,1,0,0,0,124,119,1,0,0,0,124,125,1,0,0,0,125,25,1,0,0,0,126,
         128,5,8,0,0,127,126,1,0,0,0,127,128,1,0,0,0,128,136,1,0,0,0,129,
-        137,3,28,14,0,130,137,5,19,0,0,131,137,5,18,0,0,132,133,5,3,0,0,
+        137,3,28,14,0,130,137,5,20,0,0,131,137,5,18,0,0,132,133,5,3,0,0,
         133,134,3,20,10,0,134,135,5,4,0,0,135,137,1,0,0,0,136,129,1,0,0,
         0,136,130,1,0,0,0,136,131,1,0,0,0,136,132,1,0,0,0,137,139,1,0,0,
         0,138,140,5,11,0,0,139,138,1,0,0,0,139,140,1,0,0,0,140,27,1,0,0,
@@ -79,10 +79,9 @@ class CParser ( Parser ):
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "COMPOPS", "LOGICOPS", "TYPE", "UNARYOPS", 
                       "TERMOPS", "FACTOROPS", "SPECIALUNARY", "INT", "CHAR", 
-                      "BOOL", "FLOAT", "CONST", "EQUALS", "POINTER", "IDENTIFIER", 
-                      "INTLITERAL", "FLOATLITERAL", "BOOLLITERAL", "CHARLITERAL", 
-                      "STRINGLITERAL", "SINGLESTRING", "DOUBLESTRING", "SINGLECOMMENT", 
-                      "MULTICOMMENT", "DIGIT", "WS" ]
+                      "BOOL", "FLOAT", "CONST", "EQUALS", "POINTER", "BOOLLITERAL", 
+                      "IDENTIFIER", "INTLITERAL", "FLOATLITERAL", "CHARLITERAL", 
+                      "SINGLECOMMENT", "MULTICOMMENT", "DIGIT", "WS" ]
 
     RULE_run = 0
     RULE_line = 1
@@ -124,18 +123,15 @@ class CParser ( Parser ):
     CONST=16
     EQUALS=17
     POINTER=18
-    IDENTIFIER=19
-    INTLITERAL=20
-    FLOATLITERAL=21
-    BOOLLITERAL=22
+    BOOLLITERAL=19
+    IDENTIFIER=20
+    INTLITERAL=21
+    FLOATLITERAL=22
     CHARLITERAL=23
-    STRINGLITERAL=24
-    SINGLESTRING=25
-    DOUBLESTRING=26
-    SINGLECOMMENT=27
-    MULTICOMMENT=28
-    DIGIT=29
-    WS=30
+    SINGLECOMMENT=24
+    MULTICOMMENT=25
+    DIGIT=26
+    WS=27
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -196,7 +192,7 @@ class CParser ( Parser ):
                 self.state = 33 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & 436011404) != 0)):
+                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & 66912652) != 0)):
                     break
 
         except RecognitionException as re:
@@ -251,7 +247,7 @@ class CParser ( Parser ):
             self.state = 40
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [2, 3, 7, 8, 16, 18, 19, 20, 21, 22, 23, 24]:
+            if token in [2, 3, 7, 8, 16, 18, 19, 20, 21, 22, 23]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 35
                 self.statement()
@@ -264,7 +260,7 @@ class CParser ( Parser ):
 
 
                 pass
-            elif token in [27, 28]:
+            elif token in [24, 25]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 39
                 self.comment()
@@ -421,11 +417,11 @@ class CParser ( Parser ):
             self.state = 60
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [19]:
+            if token in [20]:
                 self.state = 58
                 self.match(CParser.IDENTIFIER)
                 pass
-            elif token in [20, 21, 22, 23, 24]:
+            elif token in [19, 21, 22, 23]:
                 self.state = 59
                 self.literal()
                 pass
@@ -485,7 +481,7 @@ class CParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 64
             _la = self._input.LA(1)
-            if not(_la==27 or _la==28):
+            if not(_la==24 or _la==25):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -549,7 +545,7 @@ class CParser ( Parser ):
             self.state = 74
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [7, 18, 19]:
+            if token in [7, 18, 20]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 66
                 self.declaration()
@@ -629,7 +625,7 @@ class CParser ( Parser ):
                 self.state = 76
                 self.instantiation()
                 pass
-            elif token in [19]:
+            elif token in [20]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 77
                 self.match(CParser.IDENTIFIER)
@@ -1165,11 +1161,11 @@ class CParser ( Parser ):
             self.state = 136
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [20, 21, 22, 23, 24]:
+            if token in [19, 21, 22, 23]:
                 self.state = 129
                 self.literal()
                 pass
-            elif token in [19]:
+            elif token in [20]:
                 self.state = 130
                 self.match(CParser.IDENTIFIER)
                 pass
@@ -1224,9 +1220,6 @@ class CParser ( Parser ):
         def CHARLITERAL(self):
             return self.getToken(CParser.CHARLITERAL, 0)
 
-        def STRINGLITERAL(self):
-            return self.getToken(CParser.STRINGLITERAL, 0)
-
         def getRuleIndex(self):
             return CParser.RULE_literal
 
@@ -1256,7 +1249,7 @@ class CParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 141
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 32505856) != 0)):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 15204352) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

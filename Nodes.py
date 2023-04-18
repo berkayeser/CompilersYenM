@@ -29,7 +29,10 @@ class RunNode(Node):
 
 class PrintNode(Node):
     type = "print"
-    text = ""
+    toPrint = ""
+
+    def generateCode(self, llvm):
+        return llvm.visitPrint(self)
 
 
 class LineNode(Node):
@@ -172,9 +175,7 @@ class TermNode(Node):
             rightVal = self.right.convertValType()
             Ltype = self.left.literalType
             Rtype = self.right.literalType
-            if Ltype == "string" or Rtype == "string":
-                return None
-            elif Ltype == "float" or Rtype == "float":
+            if Ltype == "float" or Rtype == "float":
                 node.literalType = "float"
             else:
                 node.literalType = "int"
@@ -211,9 +212,7 @@ class FactorNode(Node):
             rightVal = self.right.convertValType()
             Ltype = self.left.literalType
             Rtype = self.right.literalType
-            if Ltype == "string" or Rtype == "string":
-                return None
-            elif Ltype == "float" or Rtype == "float":
+            if Ltype == "float" or Rtype == "float":
                 node.literalType = "float"
             else:
                 node.literalType = "int"
@@ -254,9 +253,7 @@ class UnaryNode(Node):
             node = LiteralNode()
             val = self.variable.convertValType()
             valType = self.variable.literalType
-            if valType == "string":
-                return None
-            elif valType == "float":
+            if valType == "float":
                 node.literalType = "float"
             else:
                 node.literalType = "int"
@@ -286,8 +283,8 @@ class SpecialUnaryNode(Node):
             node = LiteralNode()
             val = self.variable.convertValType()
             valType = self.variable.literalType
-            if valType == "string" or valType == "bool":
-                return None
+            if valType == "bool":
+                raise Exception(f"Invalid operation on boolean type")
             elif valType == "float":
                 node.literalType = "float"
             else:
@@ -315,10 +312,12 @@ class LiteralNode(Node):
 
     def convertValType(self):
         val = self.value
-        if self.literalType == "int":
-            val = int(val)
-        elif self.literalType == "float":
+        if self.literalType == "float":
             val = float(val)
+        elif self.literalType == "int":
+            val = int(val)
+        elif self.literalType == "char":
+            val = val[1:-1]
         elif self.literalType == "bool":
             if val == "true" or val == "True":
                 val = True
