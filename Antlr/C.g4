@@ -2,7 +2,7 @@ grammar C;
 
 
 run
-    : line+;
+    : line+ EOF;
 
 line
     : statement comment?
@@ -27,29 +27,60 @@ assignment
 
 declaration
     : instantiation
-    | IDENTIFIER
-    | POINTER;
+    | pointer
+    | IDENTIFIER;
 
 instantiation
-    : TYPE IDENTIFIER;
+    : type IDENTIFIER;
 
 const_instantiation
-    : CONST TYPE IDENTIFIER;
+    : CONST type IDENTIFIER;
+
+type
+    : (INT | CHAR | FLOAT | BOOL) STAR*;
 
 logicexpression
-    : '('? boolexpression (LOGICOPS (boolexpression | logicexpression))? ')'?;
+    :  boolexpression (logicops (boolexpression | logicexpression))?
+    | '(' boolexpression (logicops (boolexpression | logicexpression))? ')';
 
 boolexpression
-    : term (COMPOPS (term | boolexpression))?;
+    : term (compops (term | boolexpression))?;
 
 term
-    : factor (TERMOPS (factor | term))?;
+    : factor (termops (factor | term))?;
 
 factor
-    : element (FACTOROPS (element | factor))?;
+    : element (factorops (element | factor))?;
 
 element
-    : (UNARYOPS)? (literal | IDENTIFIER | POINTER | '(' boolexpression ')') SPECIALUNARY?;
+    : ( IDENTIFIER | '(' boolexpression ')') SPECIALUNARY? | pointer | literal
+    | (typecast | unaryops) element;
+
+
+logicops
+    : LOGICOPS;
+
+compops
+    : COMPOPS;
+
+termops
+    : MINUS
+    | PLUS;
+
+factorops
+    : STAR
+    | DIVIDE
+    | PROCENT;
+
+unaryops
+    : MINUS | PLUS | EXCLAMAION | AMPERSAND;
+
+typecast
+    : '(' (INT | CHAR | FLOAT | BOOL) ')';
+
+pointer
+    : STAR IDENTIFIER
+    | STAR pointer;
 
 COMPOPS
     : '<' | '>' | '<=' | '>=' | '==' | '!=';
@@ -57,17 +88,15 @@ COMPOPS
 LOGICOPS
     : '&&' | '||';
 
-TYPE
-    : (INT | CHAR | FLOAT | BOOL) '*'*;
 
-UNARYOPS
-    : '-' | '!' | '&';
 
-TERMOPS
-    : '+' | '-';
-
-FACTOROPS
-    : '*' | '/' | '%';
+PLUS : '+';
+MINUS : '-';
+STAR : '*';
+DIVIDE : '/';
+EXCLAMAION : '!';
+AMPERSAND : '&';
+PROCENT : '%';
 
 SPECIALUNARY
     : '++' | '--';
@@ -78,9 +107,6 @@ BOOL : 'bool';
 FLOAT : 'float';
 CONST : 'const';
 EQUALS : '=';
-
-POINTER
-    : '*'+ IDENTIFIER;
 
 literal
     : BOOLLITERAL
@@ -104,7 +130,7 @@ FLOATLITERAL
 
 
 CHARLITERAL
-    : '\'' . '\'';
+    : '\'' '\\'? . '\'';
 
 SINGLECOMMENT
     : '//' ~[\r\n]* ('\r' | '\n')?;
@@ -115,3 +141,5 @@ MULTICOMMENT
 DIGIT: [0-9];
 
 WS: [ \t\r\n]+ -> skip;
+
+ANY : .;

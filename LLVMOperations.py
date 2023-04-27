@@ -3,6 +3,7 @@ class LlvmType:
         self.pointer = pointer
         self.baseType = DataType
         self.name = name
+        self.address = False
 
     def __repr__(self):
         return f"{self.name}"
@@ -103,7 +104,7 @@ def xor(name, var1, var2):
     return LlvmType("i1", name), f"{name} = xor i1 {var1}, {var2}"
 
 
-def alloca(name, DataType):
+def alloca(name, DataType, pointer):
     if DataType == "float":
         to = "float"
     elif DataType == "int":
@@ -115,8 +116,8 @@ def alloca(name, DataType):
     else:
         raise Exception(f"{DataType} is an unsupported Data type")
     variable = LlvmType(to, name)
-    variable.pointer += 1
-    return variable, f"{name} = alloca {to}"
+    variable.pointer = pointer + 1
+    return variable, f"{name} = alloca {to + '*' * pointer}"
 
 
 def load(name, ptr):
@@ -127,6 +128,3 @@ def load(name, ptr):
 
 def store(variable, ptr):
     return f"store {variable.fullType} {variable}, {ptr.fullType} {ptr}"
-
-
-

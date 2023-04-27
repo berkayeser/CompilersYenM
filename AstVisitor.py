@@ -10,6 +10,8 @@ class AstVisitor(CVisitor):
         self.symbol_table = SymboolTabel()
 
     def visitRun(self, ctx: CParser.RunContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         ast = AST()
         node = RunNode()
         lines = ctx.line()
@@ -19,6 +21,8 @@ class AstVisitor(CVisitor):
         return ast
 
     def visitLine(self, ctx: CParser.LineContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = LineNode()
         if ctx.statement():
             node.statement = self.visitStatement(ctx.statement())
@@ -28,20 +32,9 @@ class AstVisitor(CVisitor):
             node.children.append(node.comment)
         return node
 
-    def visitPrint(self, ctx: CParser.PrintContext):
-        node = PrintNode()
-        if ctx.literal():
-            node.toPrint = ctx.literal().__str__()
-        elif ctx.IDENTIFIER():
-            node.toPrint = ctx.IDENTIFIER().__str__()
-        return node
-
-    def visitComment(self, ctx: CParser.CommentContext):
-        node = CommentNode()
-        node.text = ctx.getText()
-        return node
-
     def visitStatement(self, ctx: CParser.StatementContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = StatementNode()
         node.instruction = ctx.getText()
         if ctx.assignment():
@@ -56,7 +49,26 @@ class AstVisitor(CVisitor):
             node.children = [ctx.getText()]
         return node
 
+    def visitPrint(self, ctx: CParser.PrintContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        node = PrintNode()
+        if ctx.literal():
+            node.toPrint = ctx.literal().__str__()
+        elif ctx.IDENTIFIER():
+            node.toPrint = ctx.IDENTIFIER().__str__()
+        return node
+
+    def visitComment(self, ctx: CParser.CommentContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        node = CommentNode()
+        node.text = ctx.getText()
+        return node
+
     def visitAssignment(self, ctx: CParser.AssignmentContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = AssignmentNode()
         if ctx.declaration():
             node.left = self.visitDeclaration(ctx.declaration())
@@ -93,6 +105,8 @@ class AstVisitor(CVisitor):
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = None
         if ctx.instantiation():
             node = self.visitInstantiation(ctx.instantiation())
@@ -105,41 +119,59 @@ class AstVisitor(CVisitor):
             # Assignment to a const variable.
             if type1[0:5] == "const":
                 raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
-
-        elif ctx.POINTER():
-            node = PointerNode()
-            node.name = ctx.getText()
+        elif ctx.pointer():
+            node = self.visitPointer(ctx.pointer())
         return node
 
     def visitInstantiation(self, ctx: CParser.InstantiationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = InstantiationNode()
         node.const = False
-        node.varType = ctx.TYPE().__str__()
+        # fullType = ctx.TYPE().__str__()
+        # baseType = ""
+        # pointer = 0
+        # for i in range(len(fullType)):
+        #     if fullType[i] == "*":
+        #         pointer += 1
+        #     else:
+        #         baseType += fullType[i]
+        # node.varType = baseType
+        # node.pointer = pointer
         node.name = ctx.IDENTIFIER().__str__()
-
+        node.varType = self.visitType(ctx.type_())
         # (Checking for) Redeclaration or redefinition of an existing variable
         self.symbol_table.add_symbol(str(node.name), str(node.varType))
 
         return node
 
     def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = InstantiationNode()
         node.const = True
-        node.varType = ctx.TYPE().__str__()
         node.name = ctx.IDENTIFIER().__str__()
-
+        node.varType = self.visitType(ctx.type_())
         # (Checking for) Redeclaration or redefinition of an existing variable
         self.symbol_table.add_symbol(str(node.name), "const"+str(node.varType))
 
         return node
 
+    def visitType(self, ctx: CParser.TypeContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        return ctx.getText()
+
     def visitLogicexpression(self, ctx: CParser.LogicexpressionContext):
-        if not ctx.LOGICOPS():
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        if not ctx.logicops():
+            a = ctx.boolexpression()
+            b = ctx.boolexpression(0)
             return self.visitBoolexpression(ctx.boolexpression(0))
         node = LogicNode()
-        node.operation = ctx.LOGICOPS().__str__()
-        a = ctx.boolexpression(0)
-        node.left = self.visitBoolexpression(a)
+        node.operation = ctx.logicops().getText()
+        node.left = self.visitBoolexpression(ctx.boolexpression(0))
         if ctx.logicexpression():
             node.right = self.visitLogicexpression(ctx.logicexpression())
         else:
@@ -148,11 +180,13 @@ class AstVisitor(CVisitor):
         return node
 
     def visitBoolexpression(self, ctx: CParser.BoolexpressionContext):
-        if not ctx.COMPOPS():
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        if not ctx.compops():
             return self.visitTerm(ctx.term(0))
         if not ctx.boolexpression():
             node = CompareNode()
-            node.operation = ctx.COMPOPS().__str__()
+            node.operation = ctx.compops().getText()
             node.left = self.visitTerm(ctx.term(0))
             node.right = self.visitTerm(ctx.term(1))
             node.children = [node.left, node.right]
@@ -160,7 +194,7 @@ class AstVisitor(CVisitor):
         node = LogicNode()
         node.operation = "&&"
         compNode1 = CompareNode()
-        compNode1.operation = ctx.COMPOPS().__str__()
+        compNode1.operation = ctx.compops().getText()
         compNode2 = self.visitBoolexpression(ctx.boolexpression())
         compNode1.left = self.visitTerm(ctx.term(0))
         compNode1.right = compNode2.left
@@ -170,10 +204,12 @@ class AstVisitor(CVisitor):
         return node
 
     def visitTerm(self, ctx: CParser.TermContext):
-        if not ctx.TERMOPS():
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        if not ctx.termops():
             return self.visitFactor(ctx.factor(0))
         node = TermNode()
-        node.operation = ctx.TERMOPS().__str__()
+        node.operation = ctx.termops().getText()
         node.left = self.visitFactor(ctx.factor(0))
         if ctx.term():
             node.right = self.visitTerm(ctx.term())
@@ -183,10 +219,12 @@ class AstVisitor(CVisitor):
         return node
 
     def visitFactor(self, ctx: CParser.FactorContext):
-        if not ctx.FACTOROPS():
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        if not ctx.factorops():
             return self.visitElement(ctx.element(0))
         node = FactorNode()
-        node.operation = ctx.FACTOROPS().__str__()
+        node.operation = ctx.factorops().getText()
         node.left = self.visitElement(ctx.element(0))
         if ctx.factor():
             node.right = self.visitFactor(ctx.factor())
@@ -196,41 +234,59 @@ class AstVisitor(CVisitor):
         return node
 
     def visitElement(self, ctx: CParser.ElementContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        node = None
         variable = None
-        if ctx.literal():
-            variable = self.visitLiteral(ctx.literal())
-        elif ctx.IDENTIFIER(): # ... = x: var
-            variable = VariableNode()
-            variable.name = ctx.IDENTIFIER()
+        if ctx.typecast():
+            node = TypeCastNode()
+            node.operation = ctx.typecast().getText()
+            node.variable = self.visitElement(ctx.element())
+            node.children = [node.variable]
+        elif ctx.unaryops():
+            node = UnaryNode()
+            node.operation = ctx.unaryops().getText()
+            node.variable = self.visitElement(ctx.element())
+            node.children = [node.variable]
 
+        elif ctx.literal():
+            node = self.visitLiteral(ctx.literal())
+        elif ctx.pointer():
+            node = self.visitPointer(ctx.pointer())
+        elif ctx.IDENTIFIER():
+            node = VariableNode()
+            node.name = ctx.IDENTIFIER().__str__()
+            # Use of an uninitialized variable
+            self.symbol_table.get_symbol(str(node.name), "unint")
+        elif ctx.boolexpression():
+            node = self.visitBoolexpression(ctx.boolexpression())
+        if ctx.SPECIALUNARY():
+            newNode = SpecialUnaryNode()
+            newNode.operation = ctx.SPECIALUNARY().__str__()
+            newNode.variable = node
+            newNode.children = [newNode.variable]
+            node = newNode
+        return node
+
+    def visitPointer(self, ctx: CParser.PointerContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        node = UnaryNode()
+        node.operation = ctx.STAR().__str__()
+        variable = None
+        if ctx.IDENTIFIER():
+            variable = VariableNode()
+            variable.name = ctx.IDENTIFIER().__str__()
             # Use of an uninitialized variable
             self.symbol_table.get_symbol(str(variable.name), "unint")
-            variable.name = ctx.IDENTIFIER().__str__()
-        elif ctx.POINTER():
-            variable = PointerNode()
-            variable.name = ctx.POINTER().__str__()
-        elif ctx.boolexpression():
-            variable = self.visitBoolexpression(ctx.boolexpression())
-        node = None
-        if ctx.UNARYOPS() and ctx.SPECIALUNARY():
-            node = UnaryNode()
-            node.operation = ctx.UNARYOPS().__str__()
-            node.variable = SpecialUnaryNode()
-            node.variable.type = ctx.SPECIALUNARY()
-            node.variable.variable = variable
-        elif ctx.UNARYOPS():
-            node = UnaryNode()
-            node.operation = ctx.UNARYOPS().__str__()
-            node.variable = variable
-        elif ctx.SPECIALUNARY():
-            node = SpecialUnaryNode()
-            node.operation = ctx.SPECIALUNARY().__str__()
-            node.variable = variable
-        else:
-            return variable
+        elif ctx.pointer():
+            variable = self.visitPointer(ctx.pointer())
+        node.variable = variable
         return node
 
     def visitLiteral(self, ctx: CParser.LiteralContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
         node = LiteralNode()
         node.value = ctx.getText()
         if ctx.BOOLLITERAL():

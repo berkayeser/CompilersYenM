@@ -80,6 +80,7 @@ class InstantiationNode(Node):
     varType = "" # type int, float, ...
     const = False
     name = "" # variable name x, y , ...
+    pointer = 0 # how many stars
 
     def getASTvalue(self):
         return str(self.name)
@@ -102,6 +103,9 @@ class VariableNode(Node):
 class PointerNode(Node):
     type = "pointer"
     name = ""
+
+    def generateCode(self, llvm):
+        return llvm.visitPointer(self)
 
 
 class LogicNode(Node):
@@ -238,6 +242,15 @@ class FactorNode(Node):
 
     def generateCode(self, llvm):
         return llvm.visitFactor(self)
+
+
+class TypeCastNode(Node):
+    type = "cast"
+    castTo = ""
+    variable = None
+
+    def generateCode(self, llvm):
+        return llvm.visitTypeCast(self)
 
 
 class UnaryNode(Node):

@@ -70,7 +70,11 @@ class LLVMVisitor:
     def visitAssignment(self, node: AssignmentNode):
         variable = node.left.generateCode(self)
         # eerst checken of het een pointer is
-        result = self.getValue(node.right.generateCode(self))
+        result = node.right.generateCode(self)
+        if result.address:
+            self.instructions.append(store(result, variable))
+            return
+        result = self.getValue(result)
         if variable.baseType != "float" and result.fullType == "float":
             toInt = fptosi(self.tempVar(), result)
             result = toInt[0]
@@ -94,13 +98,17 @@ class LLVMVisitor:
         self.instructions.append(store(result, variable))
 
     def visitInstantiation(self, node: InstantiationNode):
-        temp = alloca("%" + node.name, node.varType)
+        temp = alloca("%" + node.name, node.varType, node.pointer)
         variable = temp[0]
         self.instructions.append(temp[1])
         self.symbolTable["%"+node.name] = variable
         return variable
 
     def visitVariable(self, node: VariableNode):
+        return self.symbolTable["%" + node.name]
+
+    def visitPointer(self, node: PointerNode):
+        # fout
         return self.symbolTable["%" + node.name]
 
     def visitLiteral(self, node: LiteralNode):
@@ -223,7 +231,11 @@ class LLVMVisitor:
         return result
 
     def visitUnary(self, node: UnaryNode):
-        val = self.getValue(node.variable.generateCode(self))
+        val = node.variable.generateCode(self)
+        if node.operation == "&":
+            val.address = True
+            return val
+        val = self.getValue(val)
         result = None
         floatType = False
         if val.fullType == "float":

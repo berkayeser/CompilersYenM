@@ -1,4 +1,4 @@
-# Generated from C.g4 by ANTLR 4.12.0
+# Generated from Antlr/C.g4 by ANTLR 4.12.0
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CParser import CParser
@@ -54,6 +54,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#type.
+    def visitType(self, ctx:CParser.TypeContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#logicexpression.
     def visitLogicexpression(self, ctx:CParser.LogicexpressionContext):
         return self.visitChildren(ctx)
@@ -76,6 +81,41 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#element.
     def visitElement(self, ctx:CParser.ElementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#logicops.
+    def visitLogicops(self, ctx:CParser.LogicopsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#compops.
+    def visitCompops(self, ctx:CParser.CompopsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#termops.
+    def visitTermops(self, ctx:CParser.TermopsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#factorops.
+    def visitFactorops(self, ctx:CParser.FactoropsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#unaryops.
+    def visitUnaryops(self, ctx:CParser.UnaryopsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#typecast.
+    def visitTypecast(self, ctx:CParser.TypecastContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#pointer.
+    def visitPointer(self, ctx:CParser.PointerContext):
         return self.visitChildren(ctx)
 
 

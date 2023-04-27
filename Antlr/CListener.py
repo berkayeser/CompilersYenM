@@ -1,4 +1,4 @@
-# Generated from C.g4 by ANTLR 4.12.0
+# Generated from Antlr/C.g4 by ANTLR 4.12.0
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CParser import CParser
@@ -89,6 +89,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#type.
+    def enterType(self, ctx:CParser.TypeContext):
+        pass
+
+    # Exit a parse tree produced by CParser#type.
+    def exitType(self, ctx:CParser.TypeContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#logicexpression.
     def enterLogicexpression(self, ctx:CParser.LogicexpressionContext):
         pass
@@ -131,6 +140,69 @@ class CListener(ParseTreeListener):
 
     # Exit a parse tree produced by CParser#element.
     def exitElement(self, ctx:CParser.ElementContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#logicops.
+    def enterLogicops(self, ctx:CParser.LogicopsContext):
+        pass
+
+    # Exit a parse tree produced by CParser#logicops.
+    def exitLogicops(self, ctx:CParser.LogicopsContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#compops.
+    def enterCompops(self, ctx:CParser.CompopsContext):
+        pass
+
+    # Exit a parse tree produced by CParser#compops.
+    def exitCompops(self, ctx:CParser.CompopsContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#termops.
+    def enterTermops(self, ctx:CParser.TermopsContext):
+        pass
+
+    # Exit a parse tree produced by CParser#termops.
+    def exitTermops(self, ctx:CParser.TermopsContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#factorops.
+    def enterFactorops(self, ctx:CParser.FactoropsContext):
+        pass
+
+    # Exit a parse tree produced by CParser#factorops.
+    def exitFactorops(self, ctx:CParser.FactoropsContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#unaryops.
+    def enterUnaryops(self, ctx:CParser.UnaryopsContext):
+        pass
+
+    # Exit a parse tree produced by CParser#unaryops.
+    def exitUnaryops(self, ctx:CParser.UnaryopsContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#typecast.
+    def enterTypecast(self, ctx:CParser.TypecastContext):
+        pass
+
+    # Exit a parse tree produced by CParser#typecast.
+    def exitTypecast(self, ctx:CParser.TypecastContext):
+        pass
+
+
+    # Enter a parse tree produced by CParser#pointer.
+    def enterPointer(self, ctx:CParser.PointerContext):
+        pass
+
+    # Exit a parse tree produced by CParser#pointer.
+    def exitPointer(self, ctx:CParser.PointerContext):
         pass
 
 
