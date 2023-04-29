@@ -27,7 +27,9 @@ class AstOptimizer:
                     node.children[i] = result
 
                     # node has to be an operation node
-                    if i == 1:
+                    if node.type == "unary" or node.type == "special_unary":
+                        node.variable = result
+                    elif i == 1:
                         node.right = result
                     else:
                         node.left = result

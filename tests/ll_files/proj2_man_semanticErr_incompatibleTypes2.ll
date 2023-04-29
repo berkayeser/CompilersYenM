@@ -15,13 +15,13 @@ ret void
 define i1 @"main"()
 {
 ; intx=478;
-%x = alloca i32
+%x = alloca i32*
 store i32 478, i32* %x
 ; intb=-251454;
-%b = alloca i32
+%b = alloca i32*
 store i32 -251454, i32* %b
 ; int**x_ptr=&x;
-%x_ptr = alloca i32**
+%x_ptr = alloca i32***
 store i32* %x, i32*** %x_ptr
 ; x_ptr=&b;
 store i32* %b, i32*** %x_ptr

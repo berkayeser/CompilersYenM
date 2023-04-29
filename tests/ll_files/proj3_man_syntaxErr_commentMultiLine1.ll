@@ -17,5 +17,9 @@ define i1 @"main"()
 ; /*
 
 **
+; intx=3;
+%x = alloca int
+%1 = trunc i32 3 to int
+store int %1, int %x
 ret i1 0
 }

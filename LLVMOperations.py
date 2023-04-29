@@ -1,39 +1,31 @@
 class LlvmType:
     def __init__(self, DataType, name, pointer=0):
-        self.pointer = pointer
-        self.baseType = DataType
+        self.varType = DataType
         self.name = name
         self.address = False
 
     def __repr__(self):
         return f"{self.name}"
 
-    @property
-    def fullType(self):
-        if self.pointer == 0:
-            return self.baseType
-        else:
-            return f"{self.baseType}{'*' * self.pointer}"
-
 
 # return the signed int to float instruction and the resulting float
 def sitofp(name, variable):
-    return LlvmType("float", name), f"{name} = sitofp {variable.fullType} {variable} to float"
+    return LlvmType("float", name), f"{name} = sitofp {variable.varType} {variable} to float"
 
 
 # return the signed int to float instruction and the resulting float
 def fptosi(name, variable):
-    return LlvmType("i32", name), f"{name} = fptosi {variable} to i32"
+    return LlvmType("i32", name), f"{name} = fptosi {variable.varType} {variable} to i32"
 
 
 # return the richerThan conversion of variable
 def zext(name, variable, to):
-    return LlvmType(to, name), f"{name} = zext " + variable.fullType + f" {variable} to {to}"
+    return LlvmType(to, name), f"{name} = zext " + variable.varType + f" {variable} to {to}"
 
 
 # return the information losing conversion of variable
 def trunc(name, variable, to):
-    return LlvmType(to, name), f"{name} = trunc {variable.fullType} {variable} to {to}"
+    return LlvmType(to, name), f"{name} = trunc {variable.varType} {variable} to {to}"
 
 
 def fcmpLogic(op, name1, name2, name3, var1, var2):
@@ -104,27 +96,25 @@ def xor(name, var1, var2):
     return LlvmType("i1", name), f"{name} = xor i1 {var1}, {var2}"
 
 
-def alloca(name, DataType, pointer):
-    if DataType == "float":
-        to = "float"
-    elif DataType == "int":
-        to = "i32"
-    elif DataType == "char":
-        to = "i8"
-    elif DataType == "bool":
-        to = "i1"
+def alloca(name, DataType):
+    if "int" in DataType:
+        to = f"i32{'*'  * (len(DataType) - 2)}"
+    elif "char" in DataType:
+        to = f"i8{'*'  * (len(DataType) - 3)}"
+    elif "bool" in DataType:
+        to = f"i1{'*'  * (len(DataType) - 3)}"
+    elif "float" in DataType:
+        to = f"float{'*'  * (len(DataType) - 4)}"
     else:
         raise Exception(f"{DataType} is an unsupported Data type")
     variable = LlvmType(to, name)
-    variable.pointer = pointer + 1
-    return variable, f"{name} = alloca {to + '*' * pointer}"
+    return variable, f"{name} = alloca {to}"
 
 
 def load(name, ptr):
-    variable = LlvmType(ptr.baseType, name)
-    variable.pointer = ptr.pointer-1
-    return variable, f"{name} = load {variable.fullType}, {ptr.fullType} {ptr}"
+    variable = LlvmType(ptr.varType[0:-1], name)
+    return variable, f"{name} = load {variable.varType}, {ptr.varType} {ptr}"
 
 
 def store(variable, ptr):
-    return f"store {variable.fullType} {variable}, {ptr.fullType} {ptr}"
+    return f"store {variable.varType} {variable}, {ptr.varType} {ptr}"

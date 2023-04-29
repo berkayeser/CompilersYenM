@@ -15,10 +15,10 @@ ret void
 define i1 @"main"()
 {
 ; intx=54;
-%x = alloca i32
+%x = alloca i32*
 store i32 54, i32* %x
 ; floaty=&x;
-%y = alloca float
+%y = alloca float*
 store i32* %x, float* %y
 ret i1 0
 }

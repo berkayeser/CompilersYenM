@@ -128,16 +128,6 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         node = InstantiationNode()
         node.const = False
-        # fullType = ctx.TYPE().__str__()
-        # baseType = ""
-        # pointer = 0
-        # for i in range(len(fullType)):
-        #     if fullType[i] == "*":
-        #         pointer += 1
-        #     else:
-        #         baseType += fullType[i]
-        # node.varType = baseType
-        # node.pointer = pointer
         node.name = ctx.IDENTIFIER().__str__()
         node.varType = self.visitType(ctx.type_())
         # (Checking for) Redeclaration or redefinition of an existing variable
@@ -240,7 +230,7 @@ class AstVisitor(CVisitor):
         variable = None
         if ctx.typecast():
             node = TypeCastNode()
-            node.operation = ctx.typecast().getText()
+            node.castTo = ctx.typecast().getText()[1:-1]
             node.variable = self.visitElement(ctx.element())
             node.children = [node.variable]
         elif ctx.unaryops():

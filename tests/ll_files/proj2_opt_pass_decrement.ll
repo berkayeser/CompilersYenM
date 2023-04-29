@@ -15,13 +15,13 @@ ret void
 define i1 @"main"()
 {
 ; intx=5;
-%x = alloca i32
+%x = alloca i32*
 store i32 5, i32* %x
 ; x--;
 %1 = load i32, i32* %x
 %2 = sub i32 %1, 1
 ; intz=x--;
-%z = alloca i32
+%z = alloca i32*
 %3 = load i32, i32* %x
 %4 = sub i32 %3, 1
 store i32 %4, i32* %z

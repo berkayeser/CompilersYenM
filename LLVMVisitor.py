@@ -1,6 +1,7 @@
 from Nodes import *
 from LLVMOperations import *
 
+
 class LLVMVisitor:
     def __init__(self):
         self.instructions = list()
@@ -43,13 +44,13 @@ class LLVMVisitor:
 
     def visitPrint(self, node: PrintNode):
         printInput = self.getValue(self.symbolTable["%" + node.toPrint])
-        if printInput.fullType == "float":
+        if printInput.varType == "float":
 
             # TODO: always prints zero
 
-            self.instructions.append(f"call void @printFloat({printInput.fullType} {printInput})")
-        elif printInput.fullType == "i32":
-            self.instructions.append(f"call void @printInt({printInput.fullType} {printInput})")
+            self.instructions.append(f"call void @printFloat({printInput.varType} {printInput})")
+        elif printInput.varType == "i32":
+            self.instructions.append(f"call void @printInt({printInput.varType} {printInput})")
         else:
             raise Exception(f"invalid print type")
 
@@ -75,30 +76,34 @@ class LLVMVisitor:
             self.instructions.append(store(result, variable))
             return
         result = self.getValue(result)
-        if variable.baseType != "float" and result.fullType == "float":
-            toInt = fptosi(self.tempVar(), result)
-            result = toInt[0]
-            self.instructions.append(toInt[1])
-        elif variable.baseType == "float" and result.fullType != "float":
-            toFloat = sitofp(self.tempVar(), result)
-            result = toFloat[0]
-            self.instructions.append(toFloat[1])
-        if variable.baseType != result.fullType:
-            tempConversion = None
-            if result.fullType == "i32":
-                tempConversion = trunc(self.tempVar(), result, variable.fullType)
-            elif variable.baseType == "i32":
-                tempConversion = zext(self.tempVar(), result, variable.fullType)
-            elif result.fullType == "i8":
-                tempConversion = trunc(self.tempVar(), result, variable.fullType)
-            elif variable.baseType == "i8":
-                tempConversion = zext(self.tempVar(), result, variable.fullType)
-            result = tempConversion[0]
-            self.instructions.append(tempConversion[1])
+
+        # implicit conversions
+
+        # if variable.varType != "float" and result.varType == "float":
+        #     toInt = fptosi(self.tempVar(), result)
+        #     result = toInt[0]
+        #     self.instructions.append(toInt[1])
+        # elif variable.varType == "float" and result.varType != "float":
+        #     toFloat = sitofp(self.tempVar(), result)
+        #     result = toFloat[0]
+        #     self.instructions.append(toFloat[1])
+        # if variable.varType != result.varType:
+        #     tempConversion = None
+        #     if result.varType == "i32":
+        #         tempConversion = trunc(self.tempVar(), result, variable.varType)
+        #     elif variable.varType == "i32":
+        #         tempConversion = zext(self.tempVar(), result, variable.varType)
+        #     elif result.varType == "i8":
+        #         tempConversion = trunc(self.tempVar(), result, variable.varType)
+        #     elif variable.varType == "i8":
+        #         tempConversion = zext(self.tempVar(), result, variable.varType)
+        #     result = tempConversion[0]
+        #     self.instructions.append(tempConversion[1])
+
         self.instructions.append(store(result, variable))
 
     def visitInstantiation(self, node: InstantiationNode):
-        temp = alloca("%" + node.name, node.varType, node.pointer)
+        temp = alloca("%" + node.name, node.varType)
         variable = temp[0]
         self.instructions.append(temp[1])
         self.symbolTable["%"+node.name] = variable
@@ -107,17 +112,12 @@ class LLVMVisitor:
     def visitVariable(self, node: VariableNode):
         return self.symbolTable["%" + node.name]
 
-    def visitPointer(self, node: PointerNode):
-        # fout
-        return self.symbolTable["%" + node.name]
-
     def visitLiteral(self, node: LiteralNode):
         return convertNode(node)
 
     def visitLogic(self, node: LogicNode):
         leftVal = self.getValue(node.left.generateCode(self))
         rightVal = self.getValue(node.right.generateCode(self))
-        result = None
         temp = self.richerConversion(leftVal, rightVal)
         leftVal = temp[0]
         rightVal = temp[1]
@@ -235,10 +235,15 @@ class LLVMVisitor:
         if node.operation == "&":
             val.address = True
             return val
+        elif node.operation == "*":
+            temp = load(self.tempVar(), val)
+            result = temp[0]
+            self.instructions.append(temp[1])
+            return result
         val = self.getValue(val)
-        result = None
+        temp = None
         floatType = False
-        if val.fullType == "float":
+        if val.varType == "float":
             floatType = True
         if node.operation == "-":
             if floatType:
@@ -251,15 +256,51 @@ class LLVMVisitor:
                 val = toInt[0]
                 self.instructions.append(toInt[1])
             temp = xor(self.tempVar(), val, LlvmType("i32", 1))
+        elif node.operation == "*":
+            temp = load(self.tempVar(), )
+            self.instructions.append(store())
         result = temp[0]
         self.instructions.append(temp[1])
         return result
+
+    def visitTypeCast(self, node: TypeCastNode):
+        value = self.getValue(node.variable.generateCode(self))
+        cast = node.castTo
+        newValue = None
+        if cast == "float" and value.varType != "float":
+            conversion = sitofp(self.tempVar(), value)
+            value = conversion[0]
+            self.instructions.append(conversion[1])
+        elif cast != "float" and value.varType == "float":
+            conversion = fptosi(self.tempVar(), value)
+            value = conversion[0]
+            self.instructions.append(conversion[1])
+        if ((cast == "float" and value.varType == "float") or
+                (cast == "int" and value.varType == "i32") or
+                (cast == "char" and value.varType == "i8") or
+                (cast == "bool" and value.varType == "i1")):
+            newValue = value
+        elif cast != value.varType:
+            conversion = None
+            if cast == "int":
+                conversion = zext(self.tempVar(), value, "i32")
+            elif cast == "char":
+                if value.varType == "i32":
+                    conversion = trunc(self.tempVar(), value, "i8")
+                elif value.varType == "i1":
+                    conversion = zext(self.tempVar(), value, "i8")
+            elif cast == "bool":
+                conversion = trunc(self.tempVar(), value, "i1")
+            newValue = conversion[0]
+            self.instructions.append(conversion[1])
+
+        return newValue
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
         val = self.getValue(node.variable.generateCode(self))
         result = None
         floatType = False
-        if val.fullType == "float":
+        if val.varType == "float":
             floatType = True
         if node.operation == "++":
             if floatType:
@@ -277,23 +318,24 @@ class LLVMVisitor:
 
     def richerConversion(self, leftVal, rightVal):
         floatType = False
-        if leftVal.fullType == "float" or rightVal.fullType == "float" and leftVal.fullType != rightVal.fullType:
+        if leftVal.varType == "float" or rightVal.varType == "float":
             floatType = True
-            if rightVal.fullType != "float":
+        if (leftVal.varType == "float" or rightVal.varType == "float") and leftVal.varType != rightVal.varType:
+            if rightVal.varType != "float":
                 temp = sitofp(self.tempVar(), rightVal)
                 rightVal = temp[0]
-            elif leftVal.fullType != "float":
+            elif leftVal.varType != "float":
                 temp = sitofp(self.tempVar(), leftVal)
                 leftVal = temp[0]
             self.instructions.append(temp[1])
-        elif leftVal.fullType != rightVal.fullType:
-            if leftVal.fullType == "i32":
+        elif leftVal.varType != rightVal.varType:
+            if leftVal.varType == "i32":
                 temp = zext(self.tempVar(), rightVal, "i32")
                 rightVal = temp[0]
             elif rightVal == "i32":
                 temp = zext(self.tempVar(), rightVal, "i32")
                 leftVal = temp[0]
-            elif leftVal.fullType == "i8":
+            elif leftVal.varType == "i8":
                 temp = zext(self.tempVar(), rightVal, "i8")
                 rightVal = temp[0]
             elif rightVal == "i8":

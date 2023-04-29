@@ -15,16 +15,16 @@ ret void
 define i1 @"main"()
 {
 ; floatx=0.478984;
-%x = alloca float
+%x = alloca float*
 store float 0.478984, float* %x
 ; floaty=5489451.245847;
-%y = alloca float
+%y = alloca float*
 store float 5489451.245847, float* %y
 ; floatf=1654.0000;
-%f = alloca float
+%f = alloca float*
 store float 1654.0, float* %f
 ; floatz=0000.00000;
-%z = alloca float
+%z = alloca float*
 store float 0.0, float* %z
 ; z=-565.21547;
 store float -565.21547, float* %z

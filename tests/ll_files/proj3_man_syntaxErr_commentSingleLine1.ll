@@ -15,7 +15,8 @@ ret void
 define i1 @"main"()
 {
 ; intthis_is_not_correct=4;
-%this_is_not_correct = alloca i32
-store i32 4, i32* %this_is_not_correct
+%this_is_not_correct = alloca int
+%1 = trunc i32 4 to int
+store int %1, int %this_is_not_correct
 ret i1 0
 }

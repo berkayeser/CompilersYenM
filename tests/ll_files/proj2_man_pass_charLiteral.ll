@@ -15,10 +15,10 @@ ret void
 define i1 @"main"()
 {
 ; charx='x';
-%x = alloca i8
+%x = alloca i8*
 store i8 120, i8* %x
 ; chardot='.';
-%dot = alloca i8
+%dot = alloca i8*
 store i8 46, i8* %dot
 ret i1 0
 }

@@ -28,18 +28,21 @@ define i1 @"main"()
   *
   **
 ; intline_of_code=5;
-%line_of_code = alloca i32
-store i32 5, i32* %line_of_code
+%line_of_code = alloca int
+%1 = trunc i32 5 to int
+store int %1, int %line_of_code
 ; /* /// ** ** // // //  *
 ; floatf=45;
 %f = alloca float
-%1 = sitofp i32 45 to float
-store float %1, float* %f
+%2 = sitofp i32 45 to float
+store float %2, float %f
 ; charc='b';
-%c = alloca i8
-store i8 98, i8* %c
+%c = alloca char
+%3 = trunc i8 98 to char
+store char %3, char %c
 ; intx=5;
-%x = alloca i32
-store i32 5, i32* %x
+%x = alloca int
+%4 = trunc i32 5 to int
+store int %4, int %x
 ret i1 0
 }

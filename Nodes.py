@@ -80,7 +80,6 @@ class InstantiationNode(Node):
     varType = "" # type int, float, ...
     const = False
     name = "" # variable name x, y , ...
-    pointer = 0 # how many stars
 
     def getASTvalue(self):
         return str(self.name)
@@ -98,14 +97,6 @@ class VariableNode(Node):
 
     def generateCode(self, llvm):
         return llvm.visitVariable(self)
-
-
-class PointerNode(Node):
-    type = "pointer"
-    name = ""
-
-    def generateCode(self, llvm):
-        return llvm.visitPointer(self)
 
 
 class LogicNode(Node):
@@ -274,6 +265,8 @@ class UnaryNode(Node):
                 val = ord(val[1:-1])
             if self.operation == "-":
                 node.value = str(-val)
+            elif self.operation == "+":
+                node.value = str(val)
             elif self.operation == "!":
                 node.literalType = "bool"
                 node.value = str(not val)
