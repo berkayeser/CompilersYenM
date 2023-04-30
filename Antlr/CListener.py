@@ -62,6 +62,15 @@ class CListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CParser#rvalue_assignment.
+    def enterRvalue_assignment(self, ctx:CParser.Rvalue_assignmentContext):
+        pass
+
+    # Exit a parse tree produced by CParser#rvalue_assignment.
+    def exitRvalue_assignment(self, ctx:CParser.Rvalue_assignmentContext):
+        pass
+
+
     # Enter a parse tree produced by CParser#declaration.
     def enterDeclaration(self, ctx:CParser.DeclarationContext):
         pass

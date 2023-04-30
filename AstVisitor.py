@@ -69,6 +69,8 @@ class AstVisitor(CVisitor):
     def visitAssignment(self, ctx: CParser.AssignmentContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
+        if ctx.rvalue_assignment():
+            raise Exception(f"cannot assign rvalue {ctx.rvalue_assignment().logicexpression(0).getText()}")
         node = AssignmentNode()
         if ctx.declaration():
             node.left = self.visitDeclaration(ctx.declaration())
@@ -286,5 +288,7 @@ class AstVisitor(CVisitor):
         elif ctx.FLOATLITERAL():
             node.literalType = 'float'
         elif ctx.CHARLITERAL():
+            if "\\" in node.value:
+                node.value = eval('"' + node.value + '"')
             node.literalType = 'char'
         return node

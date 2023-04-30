@@ -39,6 +39,11 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#rvalue_assignment.
+    def visitRvalue_assignment(self, ctx:CParser.Rvalue_assignmentContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#declaration.
     def visitDeclaration(self, ctx:CParser.DeclarationContext):
         return self.visitChildren(ctx)

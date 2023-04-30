@@ -23,7 +23,11 @@ comment
 
 assignment
     : declaration EQUALS logicexpression
-    | const_instantiation EQUALS logicexpression;
+    | const_instantiation EQUALS logicexpression
+    | rvalue_assignment;
+
+rvalue_assignment
+    : logicexpression EQUALS logicexpression;
 
 declaration
     : instantiation

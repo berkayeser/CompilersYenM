@@ -31,7 +31,7 @@ def main(argv):
             #     ast.generateLLVM(llvm)
             # except Exception as error:
             #     print(error, flush=True)
-            if filename == "proj2_opt_pass_typeCast.c":
+            if filename == "proj2_man_pass_pointerReassignment.c":
                 print("Entering: " + file_path, flush=True)
                 ast = visitor.visit(tree)
                 llvm = LLVMVisitor()
