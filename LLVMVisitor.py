@@ -66,17 +66,29 @@ class LLVMVisitor:
             child.generateCode(self)
 
     def visitComment(self, node: CommentNode):
-        self.instructions.append("; " + node.text[0:-1])
+        newText = node.text.split('\n')
+        for line in newText:
+            self.instructions.append("; " + line)
 
     def visitAssignment(self, node: AssignmentNode):
         variable = node.left.generateCode(self)
         # eerst checken of het een pointer is
+        if node.right.type == "literal" and "float" in variable.varType:
+            if node.right.literalType == "int":
+                node.right.literalType = "float"
         result = node.right.generateCode(self)
         if result.address:
             self.instructions.append(store(result, variable))
             return
+        tempResult = result
         result = self.getValue(result)
 
+        # als result al één of meerdere keren gedereferenced werd, dan zal het niet opnieuw gebeuren
+        # in getValue() wat wel moet
+        if tempResult == result and result.varType[-1] == "*":
+            temp = load(self.tempVar(), result)
+            result = temp[0]
+            self.instructions.append(temp[1])
         # implicit conversions
 
         # if variable.varType != "float" and result.varType == "float":
@@ -256,9 +268,6 @@ class LLVMVisitor:
                 val = toInt[0]
                 self.instructions.append(toInt[1])
             temp = xor(self.tempVar(), val, LlvmType("i32", 1))
-        elif node.operation == "*":
-            temp = load(self.tempVar(), )
-            self.instructions.append(store())
         result = temp[0]
         self.instructions.append(temp[1])
         return result
@@ -298,7 +307,7 @@ class LLVMVisitor:
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
         val = self.getValue(node.variable.generateCode(self))
-        result = None
+        temp = None
         floatType = False
         if val.varType == "float":
             floatType = True
@@ -318,6 +327,7 @@ class LLVMVisitor:
 
     def richerConversion(self, leftVal, rightVal):
         floatType = False
+        temp = None
         if leftVal.varType == "float" or rightVal.varType == "float":
             floatType = True
         if (leftVal.varType == "float" or rightVal.varType == "float") and leftVal.varType != rightVal.varType:
@@ -354,12 +364,22 @@ class LLVMVisitor:
         return currentVariable
 
 
+def float_to_64bit_hex(x):
+    if isinstance(x, str):
+        x = float(x)
+    bytes_of_x = struct.pack('>f', x)
+    x_as_int = struct.unpack('>f', bytes_of_x)[0]
+    x_as_double = struct.pack('>d', x_as_int).hex()
+    x_as_double = '0x' + x_as_double
+    return x_as_double
+
+
 def convertNode(node: LiteralNode):
     value = node.convertValType()
     if node.literalType == "int":
         return LlvmType("i32", value)
     elif node.literalType == "float":
-        return LlvmType("float", value)
+        return LlvmType("float", float_to_64bit_hex(value))
     elif node.literalType == "char":
         return LlvmType("i8", ord(value))
     elif node.literalType == "bool":

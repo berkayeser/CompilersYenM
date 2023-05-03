@@ -98,16 +98,16 @@ def xor(name, var1, var2):
 
 def alloca(name, DataType):
     if "int" in DataType:
-        to = f"i32{'*'  * (len(DataType) - 2)}"
+        to = f"i32{'*'  * (len(DataType) - 3)}"
     elif "char" in DataType:
-        to = f"i8{'*'  * (len(DataType) - 3)}"
+        to = f"i8{'*'  * (len(DataType) - 4)}"
     elif "bool" in DataType:
-        to = f"i1{'*'  * (len(DataType) - 3)}"
+        to = f"i1{'*'  * (len(DataType) - 4)}"
     elif "float" in DataType:
-        to = f"float{'*'  * (len(DataType) - 4)}"
+        to = f"float{'*'  * (len(DataType) - 5)}"
     else:
         raise Exception(f"{DataType} is an unsupported Data type")
-    variable = LlvmType(to, name)
+    variable = LlvmType(to + "*", name)
     return variable, f"{name} = alloca {to}"
 
 

@@ -1,3 +1,6 @@
+import struct
+
+
 class Node:
     children = []
     type = None

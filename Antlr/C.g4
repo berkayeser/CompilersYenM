@@ -9,10 +9,11 @@ line
     | comment;
 
 statement
-    : assignment ';'
-    | declaration ';'
-    | logicexpression ';'
-    | print ';' ;
+    : assignment SEMICOLON
+    | declaration SEMICOLON
+    | logicexpression SEMICOLON
+    | print SEMICOLON
+    | SEMICOLON;
 
 print
     : 'printf' '(' (IDENTIFIER | literal) ')';
@@ -57,7 +58,11 @@ factor
     : element (factorops (element | factor))?;
 
 element
-    : ( IDENTIFIER | '(' boolexpression ')') SPECIALUNARY? | pointer | literal
+    : ( IDENTIFIER | '(' boolexpression ')')
+    | ( IDENTIFIER | '(' boolexpression ')') SPECIALUNARY
+    | SPECIALUNARY ( IDENTIFIER | '(' boolexpression ')')
+    | pointer
+    | literal
     | (typecast | unaryops) element;
 
 
@@ -92,7 +97,7 @@ COMPOPS
 LOGICOPS
     : '&&' | '||';
 
-
+SEMICOLON: ';';
 
 PLUS : '+';
 MINUS : '-';
@@ -130,8 +135,6 @@ INTLITERAL
 
 FLOATLITERAL
     : DIGIT+ ((',' | '.') DIGIT+)?;
-
-
 
 CHARLITERAL
     : '\'' '\\'? . '\'';

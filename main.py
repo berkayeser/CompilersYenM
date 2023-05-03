@@ -15,36 +15,36 @@ def main(argv):
     for filename in os.listdir(tests_directory_path):
         file_path = os.path.join(tests_directory_path, filename)
         if os.path.isfile(file_path):
-            input_stream = FileStream(file_path)
-            lexer = CLexer(input_stream)
-            tokens = CommonTokenStream(lexer)
-            parser = CParser(tokens)
-            tree = parser.run()
-            visitor = AstVisitor()
-            optimizer = AstOptimizer()
-            # try:
-            #     print("Entering: " + file_path, flush=True)
-            #     ast = visitor.visit(tree)
-            #     llvm = LLVMVisitor()
-            #     llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-            #     ast = optimizer.constantFolding(ast)
-            #     ast.generateLLVM(llvm)
-            # except Exception as error:
-            #     print(error, flush=True)
-            if filename == "proj2_man_pass_pointerReassignment.c":
-                print("Entering: " + file_path, flush=True)
-                ast = visitor.visit(tree)
-                llvm = LLVMVisitor()
-                llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-                # if not file_path == "tests/c_files/test_1.txt":
-                ast = optimizer.constantFolding(ast)
-                ast.generateLLVM(llvm)
-                visitor.symbol_table.st_print()
-
-            # ast.vis(fid)
-            # fid +=1
-
-
+            if "semantic" not in filename and "syntax" not in filename:
+                input_stream = FileStream(file_path)
+                lexer = CLexer(input_stream)
+                tokens = CommonTokenStream(lexer)
+                parser = CParser(tokens)
+                tree = parser.run()
+                visitor = AstVisitor()
+                optimizer = AstOptimizer()
+                try:
+                    print("Entering: " + file_path, flush=True)
+                    ast = visitor.visit(tree)
+                    llvm = LLVMVisitor()
+                    llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                    ast = optimizer.constantFolding(ast)
+                    ast.generateLLVM(llvm)
+                except Exception as error:
+                    print(error, flush=True)
+                # if "semantic" not in filename and "syntax" not in filename:
+                #     print("Entering: " + file_path, flush=True)
+                #     ast = visitor.visit(tree)
+                #     llvm = LLVMVisitor()
+                #     llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                #     ast = optimizer.constantFolding(ast)
+                #     ast.generateLLVM(llvm)
+                #     visitor.symbol_table.st_print()
+    for filename in os.listdir(ll_directory_path):
+        if "semantic" not in filename and "syntax" not in filename:
+            file_path = os.path.join(ll_directory_path, filename)
+            print(f"{file_path}")
+            os.system(f"lli {file_path}")
 
 
 if __name__ == '__main__':
