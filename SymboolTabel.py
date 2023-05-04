@@ -24,15 +24,15 @@ class SymboolTabel:
 
         self.scopes[self.curScope][name]['value'] = value
 
-    def get_symbol(self, name, errortype= None):
+    def get_symbol(self, name, errortype=None):
         for scope in reversed(self.scopes):
             if name in scope:
                 return scope[name]
 
         if errortype == "undef":
-            raise Exception(f"Symbol '{name}' is undefined")
+            raise Exception(f"Semantic Error; Symbol '{name}' is undefined")
         elif errortype == "unint":
-            raise Exception(f"Symbol '{name}' is uninitialized")
+            raise Exception(f"Syntax Error; Symbol '{name}' is uninitialized")
         else:
             raise Exception(f"Symbol '{name}' is ?????????")
 
