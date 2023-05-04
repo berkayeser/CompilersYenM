@@ -10,7 +10,7 @@ from LLVMVisitor import LLVMVisitor
 # Just run "python3 main.py"
 
 def main(argv):
-    visFlag = True
+    visFlag = False
 
     if visFlag and 'output' not in os.listdir(): # Als de folder 'output' nog niet bestaat
         os.mkdir('output') # Maak een folder genaamd 'output' aan
@@ -19,8 +19,7 @@ def main(argv):
     #c_directory_path = "tests/text_files"
 
     ll_directory_path = "tests/ll_files"
-    #tests_directory_path = "tests/projecten_123_zonder_main"
-    tests_directory_path = "tests/projecten_123_zonder_main/p1"
+    tests_directory_path = "tests/projecten_123_zonder_main/p2"
 
     for filename in os.listdir(tests_directory_path):
         file_path = os.path.join(tests_directory_path, filename)
@@ -34,24 +33,23 @@ def main(argv):
             visitor = AstVisitor()
             optimizer = AstOptimizer()
             try:
-                 print("Entering: " + filename, flush=True)
-                 ast = visitor.visit(tree)
-                 llvm = LLVMVisitor()
-                 llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-                 ast = optimizer.constantPropagation(ast, visitor.symbol_table)
-                 ast = optimizer.constantFolding(ast)
-                 ast.generateLLVM(llvm)
+                print("Entering: " + filename, flush=True)
+                ast = visitor.visit(tree)
+                llvm = LLVMVisitor()
+                llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                ast = optimizer.constantPropagation(ast, visitor.symbol_table)
+                ast = optimizer.constantFolding(ast)
 
-                 if visFlag:
-                     ast.vis(filename)
-                     visitor.symbol_table.st_print()
+                if visFlag:
+                    ast.vis(filename)
+                    visitor.symbol_table.st_print()
+
+                ast.generateLLVM(llvm)
             except Exception as error:
                  print(error, flush=True)
 
         else:
             raise Exception(f"{file_path} not found.")
-
-
 
 
 if __name__ == '__main__':

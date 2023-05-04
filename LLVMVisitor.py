@@ -376,14 +376,15 @@ def float_to_64bit_hex(x):
 
 def convertNode(node: LiteralNode):
     value = node.convertValType()
-    if node.literalType == "int":
+    nlt = str(node.literalType)
+    if nlt == "int":
         return LlvmType("i32", value)
-    elif node.literalType == "float":
+    elif nlt == "float":
         return LlvmType("float", float_to_64bit_hex(value))
-    elif node.literalType == "char":
+    elif nlt == "char":
         return LlvmType("i8", ord(value))
-    elif node.literalType == "bool":
+    elif nlt == "bool":
         if value:
             return LlvmType("i1", 1)
         return LlvmType("i1", 0)
-    raise Exception(f"{node.literalType} not supported")
+    raise Exception(f"Node Literal Type '{nlt}' not supported")

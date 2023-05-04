@@ -11,9 +11,18 @@ class SymboolTabel:
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scopes[self.curScope][name] = {'type': type, 'scope': scope}
+            self.scopes[self.curScope][name] = {'type': type, 'scope': scope, 'value': None, 'assignOnce' : True}
             #self.scopes[-1][name] = {'type': type, 'scope': scope}
             #print(f"{name} , with type {type} added.")
+
+    def symbol_used_twice(self, name:str):
+        self.scopes[self.curScope][name]['assignOnce'] = False
+
+    def add_symbol_value(self, name, value):
+        if name not in self.scopes[self.curScope]:
+            raise Exception(f"Symbol '{name}' doesnt exist in current scope.")
+
+        self.scopes[self.curScope][name]['value'] = value
 
     def get_symbol(self, name, errortype= None):
         for scope in reversed(self.scopes):

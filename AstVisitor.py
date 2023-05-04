@@ -79,7 +79,18 @@ class AstVisitor(CVisitor):
         node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
 
-        # Operations of incompatible types "inta;floatb;a=b;" zie BB
+        # Adding variable values to the symbol table
+        if node.right.type == 'literal':
+            if node.left.type in ['instantiation', 'variable']:
+                # Als de waarde van dit symbool voorheen al ingevuld is, duiden we dit aan
+                if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                    self.symbol_table.symbol_used_twice(node.left.name)
+                else:
+                    self.symbol_table.add_symbol_value(node.left.name, node.right.value)
+            else:
+                print("error Ast visitor line 91")
+
+        # Operations of incompatible types "inta;floatb;a=b;" zie BB, nog niet voltooid
 
         # Assignments of incompatible types "inta=1;floatb=a;" OF "inta;floatb;a=b;"
         # bv "int a; float b; a=b;"
@@ -103,7 +114,6 @@ class AstVisitor(CVisitor):
 
             if nodeLt != nodeRt:
                 raise Exception(f"During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
-
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
@@ -118,9 +128,11 @@ class AstVisitor(CVisitor):
 
             # Use of an undefined variable
             type1 = self.symbol_table.get_symbol(str(node.name), "undef")['type']
+
             # Assignment to a const variable.
             if type1[0:5] == "const":
                 raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
+
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())
         return node
@@ -132,9 +144,9 @@ class AstVisitor(CVisitor):
         node.const = False
         node.name = ctx.IDENTIFIER().__str__()
         node.varType = self.visitType(ctx.type_())
+
         # (Checking for) Redeclaration or redefinition of an existing variable
         self.symbol_table.add_symbol(str(node.name), str(node.varType))
-
         return node
 
     def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
@@ -199,6 +211,7 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if not ctx.termops():
+            # bv int a = 1;
             return self.visitFactor(ctx.factor(0))
         node = TermNode()
         node.operation = ctx.termops().getText()
@@ -206,8 +219,10 @@ class AstVisitor(CVisitor):
         if ctx.term():
             node.right = self.visitTerm(ctx.term())
         else:
+            # bv ... = . + .;
             node.right = self.visitFactor(ctx.factor(1))
         node.children = [node.left, node.right]
+        # bv int a = 1+2; =>  node.left.value = 1      node.right.value = 2
         return node
 
     def visitFactor(self, ctx: CParser.FactorContext):
@@ -281,6 +296,7 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         node = LiteralNode()
         node.value = ctx.getText()
+
         if ctx.BOOLLITERAL():
             node.literalType = 'bool'
         elif ctx.INTLITERAL():
@@ -291,4 +307,5 @@ class AstVisitor(CVisitor):
             if "\\" in node.value:
                 node.value = eval('"' + node.value + '"')
             node.literalType = 'char'
+
         return node
