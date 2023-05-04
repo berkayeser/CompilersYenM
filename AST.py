@@ -11,7 +11,7 @@ class AST:
     root = None
 
     # Define the visualize function
-    def vis(self, fid: int):
+    def vis(self, fn: str):
         node = self.root
         # Create a new Digraph object
         dot = graphviz.Digraph()
@@ -22,6 +22,9 @@ class AST:
             id = str(hash(node))
             # Label the node with its class name
             label = node.getASTvalue()
+
+            if label == "'\x00'":
+                label = "/0"
             dot.node(id, label)
 
             # Add an edge from the parent node to this node
@@ -38,13 +41,13 @@ class AST:
 
         # Return the DOT code as a string
         # return dot.source
-        dotfilename = f'output/dotfiles/{fid}.dot'
+        dotfilename = f'tests/output/ast_files/dot_files/{fn}.dot'
+
         with open(dotfilename, 'w') as f:
             f.write(dot.source)
-
         # Convert the Dot file to a graphViz graph with Pydot
         (graph,) = pydot.graph_from_dot_file(dotfilename)
-        graph.write_png(f'output/{fid}.png')
+        graph.write_png(f'tests/output/ast_files/{fn}.png')
 
     def generateLLVM(self, llvm):
         self.root.generateCode(llvm)

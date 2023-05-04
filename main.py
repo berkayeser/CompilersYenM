@@ -20,7 +20,7 @@ def main(argv):
 
     ll_directory_path = "tests/ll_files"
     #tests_directory_path = "tests/projecten_123_zonder_main"
-    tests_directory_path = "tests/projecten_123_zonder_main/p1"
+    tests_directory_path = "tests/projecten_123_zonder_main/p2"
 
     for filename in os.listdir(tests_directory_path):
         file_path = os.path.join(tests_directory_path, filename)

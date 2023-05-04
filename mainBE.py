@@ -10,16 +10,20 @@ from LLVMVisitor import LLVMVisitor
 # Just run "python3 main.py"
 
 def main(argv):
-    visFlag = False
+    visFlag = True
 
-    if visFlag and 'output' not in os.listdir(): # Als de folder 'output' nog niet bestaat
-        os.mkdir('output') # Maak een folder genaamd 'output' aan
-        os.mkdir('output/dotfiles') # Maak een folder genaamd 'dotfiles' in 'output' aan
+    if 'output' not in os.listdir('tests'):  # Als de folder 'll' nog niet bestaat
+        os.mkdir('tests/output')  # Maak een folder genaamd 'output' aan
+    if 'll_files' not in os.listdir('tests/output'):  # Als de folder 'll' nog niet bestaat
+        os.mkdir('tests/output/ll_files')  # Maak een folder genaamd 'll' aan
+    if visFlag and 'ast_files' not in os.listdir('tests/output'): # Als de folder 'output' nog niet bestaat
+        os.mkdir('tests/output/ast_files') # Maak een folder genaamd 'output' aan
+        os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
     #c_directory_path = "tests/text_files"
-
-    ll_directory_path = "tests/ll_files"
-    tests_directory_path = "tests/projecten_123_zonder_main/p2"
+    ll_directory_path = "tests/output/ll_files"
+    tests_directory_path = "tests/projecten_123_zonder_main/p3"
+    #tests_directory_path = "tests/bestanden"
 
     for filename in os.listdir(tests_directory_path):
         file_path = os.path.join(tests_directory_path, filename)
@@ -42,7 +46,7 @@ def main(argv):
 
                 if visFlag:
                     ast.vis(filename)
-                    visitor.symbol_table.st_print()
+                    #visitor.symbol_table.st_print()
 
                 ast.generateLLVM(llvm)
             except Exception as error:

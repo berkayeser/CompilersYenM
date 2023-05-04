@@ -87,8 +87,8 @@ class AstVisitor(CVisitor):
                     self.symbol_table.symbol_used_twice(node.left.name)
                 else:
                     self.symbol_table.add_symbol_value(node.left.name, node.right.value)
-            else:
-                print("error Ast visitor line 91")
+            # else:  bv. nodelefttype = unary bv "*ptr = 2;"
+
 
         # Operations of incompatible types "inta;floatb;a=b;" zie BB, nog niet voltooid
 
@@ -131,7 +131,10 @@ class AstVisitor(CVisitor):
 
             # Assignment to a const variable.
             if type1[0:5] == "const":
-                raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
+                if type1[-1] == "*":
+                    pass
+                else:
+                    raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
 
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())
