@@ -2,18 +2,60 @@ grammar C;
 
 
 run
-    : line+ EOF;
+    : line* EOF;
 
 line
-    : statement comment?
+    : expression_statement SEMICOLON comment?
+    | jump_statement SEMICOLON
+    | compound_statement
+    | block_scope
     | comment;
 
-statement
-    : assignment SEMICOLON
-    | declaration SEMICOLON
-    | logicexpression SEMICOLON
-    | print SEMICOLON
-    | SEMICOLON;
+block_scope
+    : LCURLY line* RCURLY;
+
+compound_statement
+    : if
+    | while
+    | for;
+
+expression_statement
+    : assignment
+    | declaration
+    | logicexpression
+    | print;
+
+jump_statement
+    : break
+    | continue;
+
+if
+    : IF condition block_scope else?;
+
+else
+    : ELSE block_scope;
+
+while
+    : WHILE condition block_scope;
+
+for
+    : FOR for_condition block_scope;
+
+break
+    : BREAK;
+
+continue
+    : CONTINUE;
+
+condition
+    : LBRACKET logicexpression RBRACKET;
+
+for_condition
+    : LBRACKET assignment SEMICOLON logicexpression SEMICOLON update_expression RBRACKET;
+
+update_expression
+    : ((IDENTIFIER | pointer) EQUALS)? logicexpression
+    | ((IDENTIFIER | pointer) EQUALS)? logicexpression COMMA update_expression;
 
 print
     : 'printf' '(' (IDENTIFIER | literal) ')';
@@ -58,9 +100,10 @@ factor
     : element (factorops (element | factor))?;
 
 element
-    : ( IDENTIFIER | '(' boolexpression ')')
-    | ( IDENTIFIER | '(' boolexpression ')') SPECIALUNARY
-    | SPECIALUNARY ( IDENTIFIER | '(' boolexpression ')')
+    : IDENTIFIER | '(' boolexpression ')'
+    | IDENTIFIER SPECIALUNARY
+    | SPECIALUNARY IDENTIFIER
+    | '(' boolexpression ')'
     | pointer
     | literal
     | (typecast | unaryops) element;
@@ -91,6 +134,19 @@ pointer
     : STAR IDENTIFIER
     | STAR pointer;
 
+literal
+    : BOOLLITERAL
+    | INTLITERAL
+    | FLOATLITERAL
+    | CHARLITERAL;
+
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+FOR: 'for';
+BREAK: 'break';
+CONTINUE: 'continue';
+
 COMPOPS
     : '<' | '>' | '<=' | '>=' | '==' | '!=';
 
@@ -98,6 +154,12 @@ LOGICOPS
     : '&&' | '||';
 
 SEMICOLON: ';';
+LBRACKET: '(';
+RBRACKET: ')';
+LCURLY: '{';
+RCURLY: '}';
+COMMA: ',';
+
 
 PLUS : '+';
 MINUS : '-';
@@ -116,12 +178,6 @@ BOOL : 'bool';
 FLOAT : 'float';
 CONST : 'const';
 EQUALS : '=';
-
-literal
-    : BOOLLITERAL
-    | INTLITERAL
-    | FLOATLITERAL
-    | CHARLITERAL;
 
 BOOLLITERAL
     : 'true' | 'false';
