@@ -4,14 +4,12 @@ import struct
 class Node:
     children = []
     type = None
-    #childrenInit: int = 0
 
     def __init__(self):
         self.children = []
 
     def addNodes(self, nodes):
         self.children.append(nodes)
-        #self.childrenInit = 1
 
     def foldConstant(self):
         return None
@@ -30,12 +28,23 @@ class RunNode(Node):
         return llvm.visitRun(self)
 
 
+class BlockNode(Node):
+    type = "block"
+    comment = None
+
+
 class PrintNode(Node):
     type = "print"
     toPrint = ""
 
     def generateCode(self, llvm):
         return llvm.visitPrint(self)
+
+
+class BlockNode(Node):
+    type = "block"
+    # all code inside
+    block = None
 
 
 class LineNode(Node):
@@ -47,7 +56,29 @@ class LineNode(Node):
         return llvm.visitLine(self)
 
 
-class StatementNode(Node):
+class IfNode(Node):
+    type = "if"
+    condition = None
+    # all code inside
+    block = None
+    elseNode = None
+    comment = None
+
+
+class ElseNode(Node):
+    type = "else"
+    # all code inside
+    block = None
+
+
+class WhileNode(Node):
+    type = "while"
+    condition = None
+    block = None
+    comment = None
+
+
+class ExpressionStatementNode(Node):
     type = "statement"
     instruction = ""
 
