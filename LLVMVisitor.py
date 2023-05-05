@@ -8,6 +8,8 @@ class LLVMVisitor:
         self.varNames = 1
         self.file = ""
         self.symbolTable = dict()
+        # block labels
+        self.blocks = []
 
     # return a name for a temporary variable
     def tempVar(self):
@@ -60,7 +62,59 @@ class LLVMVisitor:
         if node.statement:
             node.statement.generateCode(self)
 
-    def visitStatement(self, node: StatementNode):
+    def visitIf(self, node: IfNode):
+        # condition check
+        result = node.condition.generateCode(self)
+        # make new label
+        br1 = self.tempVar()[1:]
+        self.blocks.append(br1)
+        index = len(self.instructions)
+        self.instructions.append(f"\n{br1}:")
+        node.block.generateCode(self)
+        if node.elseNode is not None:
+            index2 = len(self.instructions)
+            node.elseNode.generateCode(self)
+        br2 = self.tempVar()[1:]
+        self.blocks.append(br2)
+        self.instructions.insert(index, f"br i1 {result.name}, label %{br1}, label %{br2}")
+        self.instructions.append(f"br label %{br2}")
+        if node.elseNode is not None:
+            self.instructions.insert(index2+1, f"br label %{br2}")
+        self.instructions.append(f"\n{br2}:")
+
+    def visitElse(self, node: ElseNode):
+        br = self.tempVar()[1:]
+        self.blocks.append(br)
+        self.instructions.append(f"\n{br}:")
+        node.block.generateCode(self)
+
+    def visitWhile(self, node: WhileNode):
+        br1 = self.tempVar()[1:]
+        self.blocks.append(br1)
+        self.instructions.append(f"br label %{br1}")
+        self.instructions.append(f"\n{br1}:")
+        result = node.condition.generateCode(self)
+        # for the first segment
+        index1 = len(self.instructions)
+        br2 = self.tempVar()[1:]
+        self.blocks.append(br2)
+        self.instructions.append(f"\n{br2}:")
+        # breakIndex = node.block.generateCode(self)
+        self.instructions.append(f"br label %{br1}")
+        br3 = self.tempVar()[1:]
+        self.blocks.append(br3)
+        self.instructions.append(f"\n{br3}:")
+        self.instructions.insert(index1, f"br i1 {result}, label %{br2}, label %{br3}")
+        # if breakIndex is not None:
+        #     self.instructions.insert(breakIndex, f"br label %{br3}")
+
+    def visitBreak(self, node: BreakNode):
+        return len(self.instructions)
+
+    def visitContinue(self, node: ContinueNode):
+        self.instructions.append(f"br label %{self.blocks[-1]}")
+
+    def visitExpressionStatement(self, node: ExpressionStatementNode):
         self.instructions.append("; " + node.instruction)
         for child in node.children:
             child.generateCode(self)

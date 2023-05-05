@@ -81,7 +81,7 @@ class AstVisitor(CVisitor):
 
         if ctx.break_():
             return BreakNode()
-        elif ctx.break_():
+        elif ctx.continue_():
             return ContinueNode()
 
     def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr:int=-1):

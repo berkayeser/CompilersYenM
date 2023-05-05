@@ -41,11 +41,11 @@ def logic(op, name, var1, var2):
 
 
 def fcmp(op, name, var1, var2):
-    return LlvmType("i1", name), f"{name} = fcmp {op} i1 {var1}, {var2}"
+    return LlvmType("i1", name), f"{name} = fcmp {op} {var1.varType} {var1}, {var2}"
 
 
 def icmp(op, name, var1, var2):
-    return LlvmType("i1", name), f"{name} = icmp {op} i1 {var1}, {var2}"
+    return LlvmType("i1", name), f"{name} = icmp {op} {var1.varType} {var1}, {var2}"
 
 
 def fadd(name, var1, var2):

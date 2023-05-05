@@ -28,17 +28,18 @@ class RunNode(Node):
         return llvm.visitRun(self)
 
 
-class BlockNode(Node):
-    type = "block"
-    comment = None
-
-
 class BreakNode(Node):
     type = "break"
+
+    def generateCode(self, llvm):
+        return llvm.visitBreak(self)
 
 
 class ContinueNode(Node):
     type = "continue"
+
+    def generateCode(self, llvm):
+        return llvm.visitContinue(self)
 
 
 class PrintNode(Node):
@@ -53,6 +54,11 @@ class BlockNode(Node):
     type = "block"
     # all code inside
     block = None
+    comment = ""
+
+    def generateCode(self, llvm):
+        for i in self.children:
+            i.generateCode(llvm)
 
 
 class LineNode(Node):
@@ -72,18 +78,26 @@ class IfNode(Node):
     elseNode = None
     comment = None
 
+    def generateCode(self, llvm):
+        return llvm.visitIf(self)
+
 
 class ElseNode(Node):
     type = "else"
     # all code inside
     block = None
 
+    def generateCode(self, llvm):
+        return llvm.visitElse(self)
 
 class WhileNode(Node):
     type = "while"
     condition = None
     block = None
     comment = None
+
+    def generateCode(self, llvm):
+        return llvm.visitWhile(self)
 
 
 class ExpressionStatementNode(Node):
@@ -94,7 +108,7 @@ class ExpressionStatementNode(Node):
         return self.instruction
 
     def generateCode(self, llvm):
-        return llvm.visitStatement(self)
+        return llvm.visitExpressionStatement(self)
 
 
 class CommentNode(Node):
