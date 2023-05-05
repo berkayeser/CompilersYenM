@@ -22,7 +22,7 @@ def main(argv):
 
     #c_directory_path = "tests/text_files"
     ll_directory_path = "tests/output/ll_files"
-    tests_directory_path = "tests/projecten_123_zonder_main/p1"
+    tests_directory_path = "tests/projecten_123_zonder_main/p2"
     #tests_directory_path = "tests/bestanden"
 
     for filename in os.listdir(tests_directory_path):
