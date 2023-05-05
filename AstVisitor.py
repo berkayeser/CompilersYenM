@@ -50,17 +50,18 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
+        line_nr = -1
         node = None
         if ctx.expression_statement():
             node = LineNode()
-            node.statement = self.visitExpression_statement(ctx.expression_statement())
+            node.statement = self.visitExpression_statement(ctx.expression_statement(), line_nr)
             node.children.append(node.statement)
         elif ctx.jump_statement():
             node = LineNode()
             node.statement = self.visitJump_statement(ctx.jump_statement())
             node.children.append(node.statement)
         elif ctx.compound_statement():
-            node = self.visitCompound_statement(ctx.compound_statement())
+            node = self.visitCompound_statement(ctx.compound_statement(), line_nr)
         elif ctx.block_scope():
             node = BlockNode()
             node.block = self.visitBlock_scope(ctx.block_scope())
@@ -82,7 +83,7 @@ class AstVisitor(CVisitor):
         elif ctx.break_():
             return ContinueNode()
 
-    def visitCompound_statement(self, ctx: CParser.Compound_statementContext):
+    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr:int=-1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -92,7 +93,7 @@ class AstVisitor(CVisitor):
         elif ctx.while_():
             node = self.visitWhile(ctx.while_())
         elif ctx.for_():
-            node = self.visitFor(ctx.for_())
+            node = self.visitFor(ctx.for_(), line_nr)
             isFor = True
 
         if node is None:
@@ -137,13 +138,13 @@ class AstVisitor(CVisitor):
         return node
 
     # returns two nodes instead of one
-    def visitFor(self, ctx: CParser.ForContext):
+    def visitFor(self, ctx: CParser.ForContext, line_nr:int=-1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         While_node = WhileNode()
         Line_node = LineNode()
-        condition = self.visitFor_condition(ctx.for_condition())
+        condition = self.visitFor_condition(ctx.for_condition(), line_nr)
         Line_node.statement = condition[0]
         While_node.condition = condition[1]
         While_node.block = self.visitBlock_scope(ctx.block_scope())
@@ -333,7 +334,7 @@ class AstVisitor(CVisitor):
                     pass
                 else:
                     raise Exception(
-                        f"Semantic Error;{line_nr} Assignment to the const variable '{str(node.name)}' that has the type '{type1}'.")
+                        f"Semantic Error; Assignment to the const variable '{str(node.name)}' that has the type '{type1}'.")
 
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())

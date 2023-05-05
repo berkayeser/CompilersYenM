@@ -23,7 +23,7 @@ def main(argv):
     #c_directory_path = "tests/text_files"
     ll_directory_path = "tests/output/ll_files"
     tests_directory_path = "tests/projecten_123_zonder_main"
-    #tests_directory_path = "tests/bestanden"
+    tests_directory_path = "tests/bestanden"
 
     for foldername in os.listdir(tests_directory_path):
         print(f"\nEntering project {foldername}. \n")
@@ -45,7 +45,7 @@ def main(argv):
                     ast = visitor.visit(tree)
                     #llvm = LLVMVisitor()
                     #llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-                    ast = optimizer.optimize(ast, visitor.symbol_table)
+                    #ast = optimizer.optimize(ast, visitor.symbol_table)
 
                     if visFlag:
                         ast.vis(filename)

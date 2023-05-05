@@ -25,6 +25,8 @@ class AST:
 
             if label == "'\x00'":
                 label = "/0"
+            elif label == "compare":
+                label = node.operation
             dot.node(id, label)
 
             # Add an edge from the parent node to this node
