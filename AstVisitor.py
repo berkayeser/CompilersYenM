@@ -63,10 +63,11 @@ class AstVisitor(CVisitor):
         elif ctx.compound_statement():
             node = self.visitCompound_statement(ctx.compound_statement(), line_nr)
         elif ctx.block_scope():
+            self.symbol_table.open_scope()
             node = BlockNode()
             node.block = self.visitBlock_scope(ctx.block_scope())
             node.children.append(node.block)
-            # TODO: scoping
+            self.symbol_table.close_scope()
         if ctx.comment() and node is None:
             node = self.visitComment(ctx.comment())
         elif ctx.comment():
