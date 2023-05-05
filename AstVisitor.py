@@ -22,6 +22,8 @@ class AstVisitor(CVisitor):
                 for t in temp:
                     node.children.append(t)
             else:
+                if temp.type == "break" or temp.type == "continue":
+                    break
                 node.children.append(self.visitLine(line))
         ast.root = node
         return ast
@@ -38,6 +40,8 @@ class AstVisitor(CVisitor):
                 for t in temp:
                     nodes.append(t)
             else:
+                if temp.type == "break" or temp.type == "continue":
+                    break
                 nodes.append(self.visitLine(line))
         node.children = nodes
         return node
@@ -68,6 +72,15 @@ class AstVisitor(CVisitor):
             node.comment = self.visitComment(ctx.comment())
             node.children.append(node.comment)
         return node
+
+    def visitJump_statement(self, ctx: CParser.Jump_statementContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        if ctx.break_():
+            return BreakNode()
+        elif ctx.break_():
+            return ContinueNode()
 
     def visitCompound_statement(self, ctx: CParser.Compound_statementContext):
         if ctx.exception is not None:
@@ -122,7 +135,6 @@ class AstVisitor(CVisitor):
         node.children = [node.condition, node.block]
 
         return node
-
 
     # returns two nodes instead of one
     def visitFor(self, ctx: CParser.ForContext):

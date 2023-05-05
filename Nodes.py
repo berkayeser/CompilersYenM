@@ -33,6 +33,14 @@ class BlockNode(Node):
     comment = None
 
 
+class BreakNode(Node):
+    type = "break"
+
+
+class ContinueNode(Node):
+    type = "continue"
+
+
 class PrintNode(Node):
     type = "print"
     toPrint = ""
