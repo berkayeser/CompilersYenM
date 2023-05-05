@@ -18,7 +18,7 @@ class AstVisitor(CVisitor):
         lines = ctx.line()
         for line in lines:
             temp = self.visitLine(line)
-            if isinstance(temp, list):
+            if isinstance(temp, tuple):
                 for t in temp:
                     node.children.append(t)
             else:
@@ -36,7 +36,7 @@ class AstVisitor(CVisitor):
         lines = ctx.line()
         for line in lines:
             temp = self.visitLine(line)
-            if isinstance(temp, list):
+            if isinstance(temp, tuple):
                 for t in temp:
                     nodes.append(t)
             else:
@@ -148,7 +148,7 @@ class AstVisitor(CVisitor):
         Line_node.statement = condition[0]
         While_node.condition = condition[1]
         While_node.block = self.visitBlock_scope(ctx.block_scope())
-        While_node.block.children.insert(0, condition[1])
+        While_node.block.children.insert(0, condition[2])
         Line_node.children = [Line_node.statement]
         While_node.children = [While_node.condition, While_node.block]
 
