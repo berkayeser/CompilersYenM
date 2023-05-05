@@ -1,17 +1,16 @@
-import SymboolTabel
+import SymbolTable
 from AST import AST
 from Nodes import *
 
 
 class AstOptimizer:
-    st: SymboolTabel
+    st: SymbolTable
 
-    def optimize(self, tree):
-        self.constantPropagation(tree)
-        self.constantFolding(tree)
+    def optimize(self, tree: AST, st: SymbolTable):
+        return self.constantFolding(self.constantPropagation(tree, st))
 
     # We gaan loopen over elke expression en elke identifier vervangen met zijn waarde.
-    def constantPropagation(self, tree: AST, st: SymboolTabel):
+    def constantPropagation(self, tree: AST, st: SymbolTable):
         self.st = st
         propagated = True
         while propagated:

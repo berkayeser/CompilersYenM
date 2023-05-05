@@ -2,12 +2,12 @@ from Antlr.CVisitor import *
 from Antlr.CParser import *
 from Nodes import *
 from AST import AST
-from SymboolTabel import SymboolTabel
+from SymbolTable import SymbolTable
 
 
 class AstVisitor(CVisitor):
     def __init__(self):
-        self.symbol_table = SymboolTabel()
+        self.symbol_table = SymbolTable()
 
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
@@ -89,8 +89,60 @@ class AstVisitor(CVisitor):
                     self.symbol_table.add_symbol_value(node.left.name, node.right.value)
             # else:  bv. nodelefttype = unary bv "*ptr = 2;"
 
+        # Operations of incompatible types
+        # int x = 2; int b = 3; const int * x_ptr = & x; *x_ptr = b;
+        if node.left.type == "unary" and node.right.type == "variable":
+            nlvn = node.left.variable.name
+            nlvnt = self.symbol_table.get_symbol(nlvn)['type']
+            if nlvnt[0:5] == "const":
+                raise Exception(f"Semantic Error; Pointed value of '{nlvn}' of type '{nlvnt}' cannot be changed.")
 
-        # Operations of incompatible types "inta;floatb;a=b;" zie BB, nog niet voltooid
+        if node.right.type == "unary":
+
+            if node.right.variable.type == "literal":
+                nrvn = "literal"
+                nrvt = node.right.variable.literalType
+            elif node.right.variable.type == "variable":
+                nrvn = node.right.variable.name
+                nrvt = self.symbol_table.get_symbol(nrvn)['type']
+            elif node.right.variable.type == "unary":
+                nr = node.right.variable
+                while nr.type == "unary":
+                    nr = nr.variable
+                # Nu is nr een variabele
+                nrvn = nr.name
+                nrvt = self.symbol_table.get_symbol(nrvn)['type']
+            else:
+                print("error")
+                nrvt, nrvn = "error", "error"
+
+            if node.right.operation == "*":
+                if nrvt[-1] != '*':
+                    raise Exception(f"Semantic Error; Can't dereference non-pointer '{nrvn}' of type '{nrvt}'.")
+            elif node.right.operation == "&":
+                # BV int b = 4; int** m = &b;
+                nlvn = node.left.name
+                nlvt = self.symbol_table.get_symbol(nlvn)['type']
+
+                if nlvt[-2:] == "**":
+                    if nrvt[-1] != "*":
+                        raise Exception(
+                            f"Semantic Error; Can't assign address of '{nrvn}' of type '{nrvt}' to '{nlvn}' of type '{nlvt}'.")
+
+                def trim(word: str) -> str:
+                    if word[:5] == "const":
+                        word = word[5:]
+                    if word[-2:] == "**":
+                        word = word[:-2]
+                    if word[-1] == "*":
+                        word = word[:-1]
+                    return word
+
+                if trim(nlvt) != trim(nrvt):
+                    raise Exception(
+                        f"Semantic Error; Can't assign address of '{nrvn}' of type '{nrvt}' to '{nlvn}' of Incorrect type '{nlvt}'.")
+
+            # else: anders perfect in orde
 
         # Assignments of incompatible types "inta=1;floatb=a;" OF "inta;floatb;a=b;"
         # bv "int a; float b; a=b;"
@@ -100,7 +152,8 @@ class AstVisitor(CVisitor):
             nodeLt = self.symbol_table.get_symbol(nodeLn)['type']
             nodeRt = self.symbol_table.get_symbol(nodeRn)['type']
             if nodeLt != nodeRt:
-                raise Exception(f"Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+                raise Exception(
+                    f"Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
 
         # bv "int a = 1; float b = a;"
         if node.left.type == "instantiation" and node.right.type == "variable":
@@ -108,12 +161,12 @@ class AstVisitor(CVisitor):
             nodeRn = str(node.right.name)
             nodeLt = str(node.left.varType)
             nodeRt = self.symbol_table.get_symbol(nodeRn)['type']
-
             if node.left.const:
                 nodeLt = "const" + nodeLt
 
             if nodeLt != nodeRt:
-                raise Exception(f"During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+                raise Exception(
+                    f"Syntax Error; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext):
@@ -122,7 +175,7 @@ class AstVisitor(CVisitor):
         node = None
         if ctx.instantiation():
             node = self.visitInstantiation(ctx.instantiation())
-        elif ctx.IDENTIFIER(): # bv x:var = 3
+        elif ctx.IDENTIFIER():  # bv x:var = 3
             node = VariableNode()
             node.name = ctx.getText()
 
@@ -134,7 +187,8 @@ class AstVisitor(CVisitor):
                 if type1[-1] == "*":
                     pass
                 else:
-                    raise Exception(f"Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
+                    raise Exception(
+                        f"Semantic Error; Assignment to the const variable '{str(node.name)}' with type '{type1}'.")
 
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())
@@ -160,7 +214,7 @@ class AstVisitor(CVisitor):
         node.name = ctx.IDENTIFIER().__str__()
         node.varType = self.visitType(ctx.type_())
         # (Checking for) Redeclaration or redefinition of an existing variable
-        self.symbol_table.add_symbol(str(node.name), "const"+str(node.varType))
+        self.symbol_table.add_symbol(str(node.name), "const" + str(node.varType))
 
         return node
 
