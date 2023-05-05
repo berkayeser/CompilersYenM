@@ -24,7 +24,7 @@ class AstVisitor(CVisitor):
             else:
                 if temp.type == "break" or temp.type == "continue":
                     break
-                node.children.append(self.visitLine(line))
+                node.children.append(temp)
         ast.root = node
         return ast
 
@@ -42,7 +42,7 @@ class AstVisitor(CVisitor):
             else:
                 if temp.type == "break" or temp.type == "continue":
                     break
-                nodes.append(self.visitLine(line))
+                nodes.append(temp)
         node.children = nodes
         return node
 
