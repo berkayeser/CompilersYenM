@@ -2,12 +2,12 @@ from Antlr.CVisitor import *
 from Antlr.CParser import *
 from Nodes import *
 from AST import AST
-from SymboolTabel import SymboolTabel
+from SymbolTable import SymbolTable
 
 
 class AstVisitor(CVisitor):
     def __init__(self):
-        self.symbol_table = SymboolTabel()
+        self.symbol_table = SymbolTable()
 
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:

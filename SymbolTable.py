@@ -1,21 +1,27 @@
-class SymboolTabel:
+class SymbolTable:
     def __init__(self):
         self.scopes = list()
         self.scopes.append(dict())
-        self.curScope: int = 0
+        self.curScope: int = -1
 
-    def add_symbol(self, name, type, scope=0):
-        if name in self.scopes[self.curScope]:
+    def add_symbol(self, name, type):
+        s = self.curScope
+        if name in self.scopes[s]:
             if self.get_symbol(name)['type'] == type:
-                raise Exception(f"Redeclaration: Symbol '{name}' already defined in current scope")
+                raise Exception(f"Redeclaration: Symbol '{name}' already declared in current scope")
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scopes[self.curScope][name] = {'type': type, 'scope': scope, 'value': None, 'assignOnce' : True}
-            #self.scopes[-1][name] = {'type': type, 'scope': scope}
-            #print(f"{name} , with type {type} added.")
+            self.scopes[s][name] = {'type': type, 'scope': s, 'value': None, 'assignOnce' : True}
 
     def symbol_used_twice(self, name:str):
+        """
+        This function gets called when a symbol has a declaration.
+        The symbol then gets marked with 'assignOnce'.
+        This is relevant for Constant Propagation.
+        :param name: The symbol
+        :return:
+        """
         self.scopes[self.curScope][name]['assignOnce'] = False
 
     def add_symbol_value(self, name, value):
@@ -37,11 +43,14 @@ class SymboolTabel:
             raise Exception(f"Symbol '{name}' is ?????????")
 
     def open_scope(self):
-        self.scopes.append({})
+        self.scopes.append(dict())
 
-    def sluit_scope(self):
+    def close_scope(self):
         self.scopes.pop(-1)
 
     def st_print(self):
-        for name, info in self.scopes[0].items():
-            print(f"{name} => {info}")
+        for i in range(0,len(self.scopes)):
+            print(f"Scope {i}:")
+            for name, info in self.scopes[i].items():
+                print(f"{name} => {info}")
+            print()

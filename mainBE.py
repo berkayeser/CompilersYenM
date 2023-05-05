@@ -22,38 +22,40 @@ def main(argv):
 
     #c_directory_path = "tests/text_files"
     ll_directory_path = "tests/output/ll_files"
-    tests_directory_path = "tests/projecten_123_zonder_main/p2"
+    tests_directory_path = "tests/projecten_123_zonder_main"
     #tests_directory_path = "tests/bestanden"
 
-    for filename in os.listdir(tests_directory_path):
-        file_path = os.path.join(tests_directory_path, filename)
-        if os.path.isfile(file_path):
-            input_stream = FileStream(file_path)
-            lexer = CLexer(input_stream)
-            tokens = CommonTokenStream(lexer)
-            parser = CParser(tokens)
-            tree = parser.run()
+    for foldername in os.listdir(tests_directory_path):
+        print(f"\nEntering project {foldername}. \n")
+        foldername = os.path.join(tests_directory_path, foldername)
+        for filename in os.listdir(foldername):
+            file_path = os.path.join(foldername, filename)
 
-            visitor = AstVisitor()
-            optimizer = AstOptimizer()
-            try:
-                print("Entering: " + filename, flush=True)
-                ast = visitor.visit(tree)
-                llvm = LLVMVisitor()
-                llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-                ast = optimizer.constantPropagation(ast, visitor.symbol_table)
-                ast = optimizer.constantFolding(ast)
+            if os.path.isfile(file_path):
+                input_stream = FileStream(file_path)
+                lexer = CLexer(input_stream)
+                tokens = CommonTokenStream(lexer)
+                parser = CParser(tokens)
+                tree = parser.run()
 
-                if visFlag:
-                    ast.vis(filename)
-                    #visitor.symbol_table.st_print()
+                visitor = AstVisitor()
+                optimizer = AstOptimizer()
+                try:
+                    print("Entering: " + filename, flush=True)
+                    ast = visitor.visit(tree)
+                    llvm = LLVMVisitor()
+                    llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                    ast = optimizer.optimize(ast, visitor.symbol_table)
 
-                ast.generateLLVM(llvm)
-            except Exception as error:
-                 print(error, flush=True)
+                    if visFlag:
+                        ast.vis(filename)
+                        #visitor.symbol_table.st_print()
 
-        else:
-            raise Exception(f"{file_path} not found.")
+                    ast.generateLLVM(llvm)
+                except Exception as error:
+                     print(error, flush=True)
+            else:
+                raise Exception(f"{file_path} not found.")
 
 
 if __name__ == '__main__':
