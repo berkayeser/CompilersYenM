@@ -34,6 +34,7 @@ class AstVisitor(CVisitor):
         node = BlockNode()
         nodes = []
         lines = ctx.line()
+        self.symbol_table.open_scope()
         for line in lines:
             temp = self.visitLine(line)
             if isinstance(temp, tuple):
@@ -44,6 +45,7 @@ class AstVisitor(CVisitor):
                     break
                 nodes.append(temp)
         node.children = nodes
+        self.symbol_table.close_scope()
         return node
 
     def visitLine(self, ctx: CParser.LineContext):
@@ -63,11 +65,9 @@ class AstVisitor(CVisitor):
         elif ctx.compound_statement():
             node = self.visitCompound_statement(ctx.compound_statement(), line_nr)
         elif ctx.block_scope():
-            self.symbol_table.open_scope()
             node = BlockNode()
             node.block = self.visitBlock_scope(ctx.block_scope())
             node.children.append(node.block)
-            self.symbol_table.close_scope()
         if ctx.comment() and node is None:
             node = self.visitComment(ctx.comment())
         elif ctx.comment():
@@ -229,7 +229,8 @@ class AstVisitor(CVisitor):
         if node.right.type == 'literal':
             if node.left.type in ['instantiation', 'variable']:
                 # Als de waarde van dit symbool voorheen al ingevuld is, duiden we dit aan
-                if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                #if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                if self.symbol_table.symbol_used_current(node.left.name):
                     self.symbol_table.symbol_used_twice(node.left.name)
                 else:
                     self.symbol_table.add_symbol_value(node.left.name, node.right.value)

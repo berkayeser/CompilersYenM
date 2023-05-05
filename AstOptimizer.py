@@ -23,8 +23,19 @@ class AstOptimizer:
             childNode = node.children[i]
             if childNode.type == "assignment":
                 # assignment .right logicexpression/-boolexpression/-term .right factor/element
+                if childNode.right.type == "variable" and self.st.get_symbol(childNode.right.name)[
+                        'value'] is not None and self.st.get_symbol(childNode.right.name)['assignOnce'] is True:
+                        v = self.st.get_symbol(childNode.right.name)['value']
+                        node = LiteralNode()
+                        node.value = v
+                        nlt = self.st.get_symbol(childNode.right.name)['type']
+                        if nlt[0:5] == "const":
+                            nlt = nlt[5:]
+                        node.literalType = nlt
+                        childNode.right = node
+                        childNode.children[1] = node
 
-                if childNode.right.type == "term":
+                elif childNode.right.type == "term":
                     """print(childNode.right.type)
                     print( childNode.right.right.type)
                     print( childNode.right.left.type)
