@@ -4,7 +4,7 @@ from Antlr.CLexer import CLexer
 from AstVisitor import *
 from AST import AST
 from AstOptimizer import AstOptimizer
-from LLVMVisitor import LLVMVisitor
+#from LLVMVisitor import LLVMVisitor
 
 # Test script that automatically runs our Compiler on specified C files.
 # Just run "python3 main.py"
@@ -43,15 +43,15 @@ def main(argv):
                 try:
                     print("Entering: " + filename, flush=True)
                     ast = visitor.visit(tree)
-                    llvm = LLVMVisitor()
-                    llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                    #llvm = LLVMVisitor()
+                    #llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
                     ast = optimizer.optimize(ast, visitor.symbol_table)
 
                     if visFlag:
                         ast.vis(filename)
                         #visitor.symbol_table.st_print()
 
-                    ast.generateLLVM(llvm)
+                    #ast.generateLLVM(llvm)
                 except Exception as error:
                      print(error, flush=True)
             else:

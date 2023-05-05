@@ -5,10 +5,10 @@ run
     : line* EOF;
 
 line
-    : expression_statement SEMICOLON comment?
-    | jump_statement SEMICOLON
-    | compound_statement
-    | block_scope
+    : comment? expression_statement SEMICOLON
+    | comment? jump_statement SEMICOLON
+    | comment? compound_statement
+    | comment? block_scope
     | comment;
 
 block_scope
@@ -54,8 +54,8 @@ for_condition
     : LBRACKET assignment SEMICOLON logicexpression SEMICOLON update_expression RBRACKET;
 
 update_expression
-    : ((IDENTIFIER | pointer) EQUALS)? logicexpression
-    | ((IDENTIFIER | pointer) EQUALS)? logicexpression COMMA update_expression;
+    : ((IDENTIFIER | pointer) EQUALS)? logicexpression;
+//    | ((IDENTIFIER | pointer) EQUALS)? logicexpression COMMA update_expression;
 
 print
     : 'printf' '(' (IDENTIFIER | literal) ')';

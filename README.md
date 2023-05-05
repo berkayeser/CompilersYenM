@@ -7,6 +7,7 @@ Simple C Compiler project by
 <br><br>
 
 We ondersteunen Constant Folding, Constant Propagation, ...
+We hebben alle optionele features van p1-3 behalve implicit Type conversions.
 <br><br>
 
 #### Project 1
