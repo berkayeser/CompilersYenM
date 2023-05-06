@@ -2,9 +2,9 @@ grammar C;
 
 
 run
-    : line* EOF;
+    : statement* EOF;
 
-line
+statement
     : comment? expression_statement SEMICOLON
     | comment? jump_statement SEMICOLON
     | comment? compound_statement
@@ -12,7 +12,7 @@ line
     | comment;
 
 block_scope
-    : LCURLY line* RCURLY;
+    : LCURLY statement* RCURLY;
 
 compound_statement
     : if
@@ -153,13 +153,13 @@ COMPOPS
 LOGICOPS
     : '&&' | '||';
 
+EQUALS : '=';
 SEMICOLON: ';';
 LBRACKET: '(';
 RBRACKET: ')';
 LCURLY: '{';
 RCURLY: '}';
 COMMA: ',';
-
 
 PLUS : '+';
 MINUS : '-';
@@ -177,23 +177,23 @@ CHAR : 'char';
 BOOL : 'bool';
 FLOAT : 'float';
 CONST : 'const';
-EQUALS : '=';
 
-BOOLLITERAL
-    : 'true' | 'false';
+
 
 IDENTIFIER
     : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
 
+FLOATLITERAL
+    : DIGIT+ ((',' | '.') DIGIT+)?;
 
 INTLITERAL
     : DIGIT+;
 
-FLOATLITERAL
-    : DIGIT+ ((',' | '.') DIGIT+)?;
-
 CHARLITERAL
     : '\'' '\\'? . '\'';
+
+BOOLLITERAL
+    : 'true' | 'false';
 
 SINGLECOMMENT
     : '//' ~[\r\n]* ('\r' | '\n')?;
@@ -201,7 +201,7 @@ SINGLECOMMENT
 MULTICOMMENT
     : '/*' .*? '*/';
 
-DIGIT: [0-9];
+fragment DIGIT: [0-9];
 
 WS: [ \t\r\n]+ -> skip;
 

@@ -15,9 +15,9 @@ class AstVisitor(CVisitor):
 
         ast = AST()
         node = RunNode()
-        lines = ctx.line()
-        for line in lines:
-            temp = self.visitLine(line)
+        statements = ctx.statement()
+        for statement in statements:
+            temp = self.visitStatement(statement)
             if isinstance(temp, tuple):
                 for t in temp:
                     node.children.append(t)
@@ -33,9 +33,9 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         node = BlockNode()
         nodes = []
-        lines = ctx.line()
-        for line in lines:
-            temp = self.visitLine(line)
+        statements = ctx.statement()
+        for statement in statements:
+            temp = self.visitStatement(statement)
             if isinstance(temp, tuple):
                 for t in temp:
                     nodes.append(t)
@@ -46,18 +46,18 @@ class AstVisitor(CVisitor):
         node.children = nodes
         return node
 
-    def visitLine(self, ctx: CParser.LineContext):
+    def visitStatement(self, ctx: CParser.StatementContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         line_nr = -1
         node = None
         if ctx.expression_statement():
-            node = LineNode()
+            node = StatementNode()
             node.statement = self.visitExpression_statement(ctx.expression_statement(), line_nr)
             node.children.append(node.statement)
         elif ctx.jump_statement():
-            node = LineNode()
+            node = StatementNode()
             node.statement = self.visitJump_statement(ctx.jump_statement())
             node.children.append(node.statement)
         elif ctx.compound_statement():
@@ -84,7 +84,7 @@ class AstVisitor(CVisitor):
         elif ctx.continue_():
             return ContinueNode()
 
-    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr:int=-1):
+    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -139,23 +139,23 @@ class AstVisitor(CVisitor):
         return node
 
     # returns two nodes instead of one
-    def visitFor(self, ctx: CParser.ForContext, line_nr:int=-1):
+    def visitFor(self, ctx: CParser.ForContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
-        While_node = WhileNode()
-        Line_node = LineNode()
+        While = WhileNode()
+        Statement = StatementNode()
         condition = self.visitFor_condition(ctx.for_condition(), line_nr)
-        Line_node.statement = condition[0]
-        While_node.condition = condition[1]
-        While_node.block = self.visitBlock_scope(ctx.block_scope())
-        While_node.block.children.insert(0, condition[2])
-        Line_node.children = [Line_node.statement]
-        While_node.children = [While_node.condition, While_node.block]
+        Statement.statement = condition[0]
+        Statement.children = [Statement.statement]
+        While.condition = condition[1]
+        While.block = self.visitBlock_scope(ctx.block_scope())
+        While.block.children.insert(0, condition[2])
+        While.children = [While.condition, While.block]
 
-        return Line_node, While_node
+        return Statement, While
 
-    def visitFor_condition(self, ctx: CParser.For_conditionContext, line_nr:int = -1):
+    def visitFor_condition(self, ctx: CParser.For_conditionContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -177,7 +177,7 @@ class AstVisitor(CVisitor):
         else:
             return self.visitLogicexpression(ctx.logicexpression())
 
-    def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr:int = -1):
+    def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -200,7 +200,9 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         node = PrintNode()
         if ctx.literal():
-            node.toPrint = ctx.literal().__str__()
+            node.toPrint = ctx.literal().getText()
+
+        # TODO: maybe getText()
         elif ctx.IDENTIFIER():
             node.toPrint = ctx.IDENTIFIER().__str__()
         return node
@@ -212,7 +214,7 @@ class AstVisitor(CVisitor):
         node.text = ctx.getText()
         return node
 
-    def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr:int = -1):
+    def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if ctx.rvalue_assignment():
@@ -316,13 +318,13 @@ class AstVisitor(CVisitor):
                     f"Syntax Error; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
         return node
 
-    def visitDeclaration(self, ctx: CParser.DeclarationContext, line_nr:int = -1):
+    def visitDeclaration(self, ctx: CParser.DeclarationContext, line_nr: int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
         node = None
         if ctx.instantiation():
             node = self.visitInstantiation(ctx.instantiation())
-        elif ctx.IDENTIFIER(): # bv x:var = 3
+        elif ctx.IDENTIFIER():  # bv x:var = 3
             node = VariableNode()
             node.name = ctx.getText()
 
