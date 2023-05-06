@@ -34,6 +34,7 @@ class AstVisitor(CVisitor):
         node = BlockNode()
         nodes = []
         statements = ctx.statement()
+        self.symbol_table.open_scope()
         for statement in statements:
             temp = self.visitStatement(statement)
             if isinstance(temp, tuple):
@@ -44,6 +45,7 @@ class AstVisitor(CVisitor):
                     break
                 nodes.append(temp)
         node.children = nodes
+        self.symbol_table.close_scope()
         return node
 
     def visitStatement(self, ctx: CParser.StatementContext):
@@ -177,7 +179,7 @@ class AstVisitor(CVisitor):
         else:
             return self.visitLogicexpression(ctx.logicexpression())
 
-    def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr: int = -1):
+    def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr:int = -1):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -231,7 +233,8 @@ class AstVisitor(CVisitor):
         if node.right.type == 'literal':
             if node.left.type in ['instantiation', 'variable']:
                 # Als de waarde van dit symbool voorheen al ingevuld is, duiden we dit aan
-                if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                #if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                if self.symbol_table.symbol_used_current(node.left.name):
                     self.symbol_table.symbol_used_twice(node.left.name)
                 else:
                     self.symbol_table.add_symbol_value(node.left.name, node.right.value)
