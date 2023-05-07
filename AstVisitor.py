@@ -15,22 +15,81 @@ class AstVisitor(CVisitor):
 
         ast = AST()
         node = RunNode()
-        statements = ctx.statement()
-        for statement in statements:
-            temp = self.visitStatement(statement)
-            if isinstance(temp, tuple):
-                for t in temp:
-                    node.children.append(t)
-            else:
-                if temp.type == "break" or temp.type == "continue":
-                    break
-                node.children.append(temp)
+        if ctx.include():
+            node.include = True
+        for child in ctx.children:
+            if isinstance(child, CParser.FunctionContext):
+                node.children.append(self.visitFunction(child))
+            elif isinstance(child, CParser.Global_varContext):
+                node.children.append(self.visitGlobal_var(child))
+            elif isinstance(child, CParser.Forward_declareContext):
+                node.children.append(self.visitForward_declare(child))
+            elif isinstance(child, CParser.CommentContext):
+                node.children.append(self.visitComment(child))
         ast.root = node
         return ast
+
+    def visitGlobal_var(self, ctx: CParser.Global_varContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = AssignmentNode()
+        if ctx.instantiation():
+            node.left = self.visitInstantiation(ctx.instantiation())
+        elif ctx.const_instantiation():
+            node.left = self.visitConst_instantiation(ctx.const_instantiation())
+        node.right = self.visitLogicexpression(ctx.logicexpression())
+        node.children = [node.left, node.right]
+        return node
+
+    def visitFunction_declaration(self, ctx: CParser.Function_declarationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = FuncDeclareNode()
+        if ctx.VOID():
+            node.returnType = "void"
+        elif ctx.type_():
+            node.returnType = ctx.type_().getText()
+        node.name = ctx.IDENTIFIER().getText()
+        if ctx.argument_declaration():
+            node.arguments = self.visitArgument_declaration(ctx.argument_declaration())
+            node.children = [node.arguments]
+        return node
+
+    def visitArgument_declaration(self, ctx: CParser.Argument_declarationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = FunctionArgNode()
+        if ctx.CONST():
+            node.const = True
+        if ctx.AMPERSAND():
+            node.reference = True
+        node.varType = ctx.type_().getText()
+        node.name = ctx.IDENTIFIER().getText()
+        if ctx.COMMA():
+            allArgs = [node]
+            arguments = self.visitArgument_declaration(ctx.argument_declaration())
+            for arg in arguments:
+                allArgs.append(arg)
+            return allArgs
+        return [node]
+
+    def visitFunction(self, ctx: CParser.FunctionContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = FunctionNode()
+        node.declaration = self.visitFunction_declaration(ctx.function_declaration())
+        node.block = self.visitBlock_scope(ctx.block_scope())
+        node.children = [node.declaration, node.block]
+        return node
 
     def visitBlock_scope(self, ctx: CParser.Block_scopeContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
+
         node = BlockNode()
         nodes = []
         statements = ctx.statement()
@@ -58,6 +117,10 @@ class AstVisitor(CVisitor):
             node = StatementNode()
             node.statement = self.visitExpression_statement(ctx.expression_statement(), line_nr)
             node.children.append(node.statement)
+        elif ctx.array_initialisation():
+            node = StatementNode()
+            node.statement = self.visitArray_initialisation(ctx.array_initialisation())
+            node.children.append(node.statement)
         elif ctx.jump_statement():
             node = StatementNode()
             node.statement = self.visitJump_statement(ctx.jump_statement())
@@ -77,6 +140,75 @@ class AstVisitor(CVisitor):
             node.children.append(node.comment)
         return node
 
+    def visitArray_initialisation(self, ctx: CParser.Array_initialisationContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = ArrayInstantiationNode()
+        node.name = ctx.IDENTIFIER().getText()
+        node.size = int(ctx.INTLITERAL())
+        node.varType = ctx.type_().getText()
+        return node
+
+    def visitArray(self, ctx: CParser.ArrayContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = ArrayNode()
+        node.name = ctx.IDENTIFIER().getText()
+        node.index = int(ctx.INTLITERAL().getText())
+        return node
+
+    def visitFunction_call(self, ctx: CParser.Function_callContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        if ctx.scanf():
+            return self.visitScanf(ctx.scanf())
+        elif ctx.printf():
+            return self.visitPrintf(ctx.printf())
+
+        node = CallNode()
+        node.name = ctx.IDENTIFIER().getText()
+        if ctx.argument():
+            node.arguments = self.visitArgument(ctx.argument())
+            node.children = node.arguments
+        return node
+
+    def visitScanf(self, ctx: CParser.ScanfContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = ScanfNode()
+        node.string = ctx.STRINGLITERAL().getText()[1:-1]
+        if ctx.argument():
+            node.arguments = self.visitArgument(ctx.argument())
+        return node
+
+    def visitPrintf(self, ctx: CParser.PrintfContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = PrintfNode()
+        node.string = ctx.STRINGLITERAL().getText()[1:-1]
+        if ctx.argument():
+            node.arguments = self.visitArgument(ctx.argument())
+        return node
+
+    def visitArgument(self, ctx: CParser.ArgumentContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = ArgumentNode()
+        node.value = self.visitLogicexpression(ctx.logicexpression())
+        if ctx.COMMA():
+            allArgs = [node]
+            arguments = self.visitArgument(ctx.argument())
+            for arg in arguments:
+                allArgs.append(arg)
+            return allArgs
+        return [node]
+
     def visitJump_statement(self, ctx: CParser.Jump_statementContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -85,6 +217,12 @@ class AstVisitor(CVisitor):
             return BreakNode()
         elif ctx.continue_():
             return ContinueNode()
+        elif ctx.return_():
+            node = ReturnNode()
+            if ctx.logicexpression():
+                node.returnValue = self.visitLogicexpression(ctx.logicexpression())
+            else:
+                node.returnValue = "void"
 
     def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1):
         if ctx.exception is not None:
@@ -191,22 +329,8 @@ class AstVisitor(CVisitor):
             node.children = [self.visitDeclaration(ctx.declaration(), line_nr)]
         elif ctx.logicexpression():
             node.children = [self.visitLogicexpression(ctx.logicexpression())]
-        elif ctx.print_():
-            node.children = [self.visitPrint(ctx.print_())]
         else:
             node.children = []
-        return node
-
-    def visitPrint(self, ctx: CParser.PrintContext):
-        if ctx.exception is not None:
-            raise Exception("syntax error")
-        node = PrintNode()
-        if ctx.literal():
-            node.toPrint = ctx.literal().getText()
-
-        # TODO: maybe getText()
-        elif ctx.IDENTIFIER():
-            node.toPrint = ctx.IDENTIFIER().__str__()
         return node
 
     def visitComment(self, ctx: CParser.CommentContext):
@@ -221,6 +345,7 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         if ctx.rvalue_assignment():
             raise Exception(f"cannot assign rvalue {ctx.rvalue_assignment().logicexpression(0).getText()}")
+
         node = AssignmentNode()
         if ctx.declaration():
             node.left = self.visitDeclaration(ctx.declaration(), line_nr)

@@ -23,9 +23,59 @@ class Node:
 
 class RunNode(Node):
     type = "run"
+    include = False
 
     def generateCode(self, llvm):
         return llvm.visitRun(self)
+
+
+class IncludeNode(Node):
+    type = "include"
+    lib = "stdio"
+
+
+class FuncDeclareNode(Node):
+    type = "function_declaration"
+    name = ""
+    returnType = ""
+    arguments = []
+
+
+class FunctionNode(Node):
+    type = "function"
+    declaration = None  # FuncDeclareNode
+    block = []
+
+
+class PrintfNode(Node):
+    type = "printf"
+    string = None
+    arguments = []
+
+
+class ScanfNode(Node):
+    type = "scanf"
+    string = None
+    arguments = []
+
+
+class FunctionArgNode(Node):
+    type = "function_argument"
+    const = None
+    varType = None
+    reference = None
+    name = None
+
+
+class CallNode(Node):
+    type = "call"
+    name = ""
+    arguments = []
+
+
+class ArgumentNode(Node):
+    type = "argument"
+    value = None
 
 
 class BreakNode(Node):
@@ -40,6 +90,11 @@ class ContinueNode(Node):
 
     def generateCode(self, llvm):
         return llvm.visitContinue(self)
+
+
+class ReturnNode(Node):
+    type = "return"
+    returnValue = None
 
 
 class PrintNode(Node):
@@ -61,7 +116,7 @@ class BlockNode(Node):
             i.generateCode(llvm)
 
 
-class LineNode(Node):
+class StatementNode(Node):
     type = "line"
     statement = None
     comment = None
@@ -89,6 +144,7 @@ class ElseNode(Node):
 
     def generateCode(self, llvm):
         return llvm.visitElse(self)
+
 
 class WhileNode(Node):
     type = "while"
@@ -133,9 +189,9 @@ class AssignmentNode(Node):
 
 class InstantiationNode(Node):
     type = "instantiation"
-    varType = "" # type int, float, ...
     const = False
-    name = "" # variable name x, y , ...
+    varType = ""  # type int, float, ...
+    name = ""  # variable name x, y , ...
 
     def getASTvalue(self):
         return str(self.name)
@@ -153,6 +209,19 @@ class VariableNode(Node):
 
     def generateCode(self, llvm):
         return llvm.visitVariable(self)
+
+
+class ArrayInstantiationNode(Node):
+    type = "arrayInstantiation"
+    name = ""
+    size = None
+    varType = ""
+
+
+class ArrayNode(Node):
+    type = "array"
+    name = ""
+    index = None
 
 
 class LogicNode(Node):
