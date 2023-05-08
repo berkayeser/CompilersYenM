@@ -126,8 +126,7 @@ type
     : (INT | CHAR | FLOAT | BOOL) STAR*;
 
 logicexpression
-    :  boolexpression (logicops (boolexpression | logicexpression))?
-    | '(' boolexpression (logicops (boolexpression | logicexpression))? ')';
+    :  boolexpression (logicops (boolexpression | logicexpression))?;
 
 boolexpression
     : term (compops (term | boolexpression))?;
@@ -139,7 +138,7 @@ factor
     : element (factorops (element | factor))?;
 
 element
-    : IDENTIFIER | array | '(' boolexpression ')'
+    : IDENTIFIER | array | '(' logicexpression ')'
     | (IDENTIFIER | array) SPECIALUNARY
     | SPECIALUNARY (IDENTIFIER | array)
     | '(' boolexpression ')'
