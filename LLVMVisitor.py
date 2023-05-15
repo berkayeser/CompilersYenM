@@ -56,7 +56,7 @@ class LLVMVisitor:
         else:
             raise Exception(f"invalid print type")
 
-    def visitLine(self, node: LineNode):
+    def visitLine(self, node: StatementNode):
         if node.comment:
             node.comment.generateCode(self)
         if node.statement:

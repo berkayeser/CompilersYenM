@@ -40,6 +40,9 @@ class FuncDeclareNode(Node):
     returnType = ""
     arguments = []
 
+    def getASTvalue(self):
+        return self.name
+
 
 class FunctionNode(Node):
     type = "function"
@@ -95,6 +98,9 @@ class ContinueNode(Node):
 class ReturnNode(Node):
     type = "return"
     returnValue = None
+
+    def getASTvalue(self):
+        return self.type + " " + str(self.returnValue.value)
 
 
 class PrintNode(Node):

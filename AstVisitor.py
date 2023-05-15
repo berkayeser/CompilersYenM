@@ -112,6 +112,7 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
 
         line_nr = -1
+        #voor error line printing
         node = None
         if ctx.expression_statement():
             node = StatementNode()
@@ -223,6 +224,7 @@ class AstVisitor(CVisitor):
                 node.returnValue = self.visitLogicexpression(ctx.logicexpression())
             else:
                 node.returnValue = "void"
+            return node
 
     def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1):
         if ctx.exception is not None:
@@ -319,6 +321,7 @@ class AstVisitor(CVisitor):
 
     def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr:int = -1):
         if ctx.exception is not None:
+            print(ctx.exception)
             raise Exception("syntax error")
 
         node = ExpressionStatementNode()
@@ -506,7 +509,9 @@ class AstVisitor(CVisitor):
         if not ctx.logicops():
             a = ctx.boolexpression()
             b = ctx.boolexpression(0)
-            return self.visitBoolexpression(ctx.boolexpression(0))
+
+            node = self.visitBoolexpression(ctx.boolexpression(0))
+            return node
         node = LogicNode()
         node.operation = ctx.logicops().getText()
         node.left = self.visitBoolexpression(ctx.boolexpression(0))
@@ -521,7 +526,8 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if not ctx.compops():
-            return self.visitTerm(ctx.term(0))
+            node = self.visitTerm(ctx.term(0))
+            return node
         if not ctx.boolexpression():
             node = CompareNode()
             node.operation = ctx.compops().getText()
@@ -546,7 +552,8 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         if not ctx.termops():
             # bv int a = 1;
-            return self.visitFactor(ctx.factor(0))
+            node = self.visitFactor(ctx.factor(0))
+            return node
         node = TermNode()
         node.operation = ctx.termops().getText()
         node.left = self.visitFactor(ctx.factor(0))
@@ -563,7 +570,8 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if not ctx.factorops():
-            return self.visitElement(ctx.element(0))
+            node = self.visitElement(ctx.element(0))
+            return node
         node = FactorNode()
         node.operation = ctx.factorops().getText()
         node.left = self.visitElement(ctx.element(0))
