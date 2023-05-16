@@ -141,7 +141,6 @@ element
     : IDENTIFIER | array | '(' logicexpression ')'
     | (IDENTIFIER | array) SPECIALUNARY
     | SPECIALUNARY (IDENTIFIER | array)
-    | '(' boolexpression ')'
     | pointer
     | literal
     | function_call

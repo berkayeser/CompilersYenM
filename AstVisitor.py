@@ -578,7 +578,6 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         node = None
-        variable = None
         if ctx.typecast():
             node = TypeCastNode()
             node.castTo = ctx.typecast().getText()[1:-1]
@@ -599,8 +598,12 @@ class AstVisitor(CVisitor):
             node.name = ctx.IDENTIFIER().__str__()
             # Use of an uninitialized variable
             self.symbol_table.get_symbol(str(node.name), "unint")
-        elif ctx.boolexpression():
-            node = self.visitBoolexpression(ctx.boolexpression())
+        elif ctx.array():
+            node = self.visitArray(ctx.array())
+        elif ctx.logicexpression():
+            node = self.visitBoolexpression(ctx.logicexpression())
+        elif ctx.function_call():
+            node = self.visitFunction_call(ctx.function_call())
         if ctx.SPECIALUNARY():
             newNode = SpecialUnaryNode()
             newNode.operation = ctx.SPECIALUNARY().__str__()
