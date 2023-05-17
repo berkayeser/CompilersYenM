@@ -24,7 +24,7 @@ def main(argv):
     ll_directory_path = "tests/output/ll_files"
     #tests_directory_path = "tests/projecten_123_zonder_main"
     tests_directory_path = "tests/alle_projecten"
-    tests_directory_path = "tests/projecten_4"
+    #tests_directory_path = "tests/projecten_4"
 
     for foldername in os.listdir(tests_directory_path):
         print(f"\nEntering project {foldername}. \n")
@@ -42,20 +42,20 @@ def main(argv):
 
                 visitor = AstVisitor()
                 optimizer = AstOptimizer()
-                #try:
-                print("Entering: " + filename, flush=True)
-                ast = visitor.visit(tree)
-                llvm = LLVMVisitor()
-                llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
-                ast = optimizer.optimize(ast, visitor.symbol_table)
+                try:
+                    print("Entering: " + filename, flush=True)
+                    ast = visitor.visit(tree)
+                    llvm = LLVMVisitor()
+                    llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                    ast = optimizer.optimize(ast, visitor.symbol_table)
 
-                if visFlag:
-                    ast.vis(filename)
-                    #visitor.symbol_table.st_print()
+                    if visFlag:
+                        ast.vis(filename)
+                        #visitor.symbol_table.st_print()
 
-                    ast.generateLLVM(llvm)
-                #except Exception as error:
-                     #print(error, flush=True)
+                        ast.generateLLVM(llvm)
+                except Exception as error:
+                     print(error, flush=True)
             else:
                 raise Exception(f"{file_path} not found.")
 

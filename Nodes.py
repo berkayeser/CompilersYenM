@@ -69,11 +69,19 @@ class FunctionArgNode(Node):
     reference = None
     name = None
 
+    def getASTvalue(self):
+        if self.const:
+            return "const " + self.varType
+        else:
+            return self.varType
 
 class CallNode(Node):
     type = "call"
     name = ""
     arguments = []
+
+    def getASTvalue(self):
+        return self.name + "()"
 
 
 class ArgumentNode(Node):
@@ -100,7 +108,13 @@ class ReturnNode(Node):
     returnValue = None
 
     def getASTvalue(self):
-        return self.type + " " + str(self.returnValue.value)
+        if self.returnValue.type == "term":
+            return self.type + " " + str(self.returnValue.operation)
+        elif self.returnValue.type == "variable":
+            return self.type + " " + str(self.returnValue.name)
+        else:
+            return self.type + " " + str(self.returnValue.value)
+
 
 
 class PrintNode(Node):
@@ -126,6 +140,8 @@ class StatementNode(Node):
     type = "line"
     statement = None
     comment = None
+
+
 
     def generateCode(self, llvm):
         return llvm.visitLine(self)
