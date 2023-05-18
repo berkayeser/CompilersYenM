@@ -135,6 +135,13 @@ class AstVisitor(CVisitor):
             node.children.append(node.statement)
         elif ctx.compound_statement():
             node = self.visitCompound_statement(ctx.compound_statement(), line_nr)
+            if isinstance(node, tuple):
+                whileNode = node[1]
+                node = node[0]
+                if ctx.comment():
+                    node.comment = self.visitComment(ctx.comment())
+                    node.children.append(node.comment)
+                return node, whileNode
         elif ctx.block_scope():
             node = BlockNode()
             node.block = self.visitBlock_scope(ctx.block_scope())
@@ -244,7 +251,6 @@ class AstVisitor(CVisitor):
             node = self.visitWhile(ctx.while_())
         elif ctx.for_():
             node = self.visitFor(ctx.for_(), line_nr)
-            isFor = True
 
         if node is None:
             raise Exception("Node is node")
