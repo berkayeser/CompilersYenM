@@ -1,5 +1,5 @@
 #from AstVisitor import AstVisitor as astvis
-class astvis:
+class AstVisitor:
     pass
 
 class SymbolTable:
@@ -10,7 +10,7 @@ class SymbolTable:
     {},
     ]
     """
-    def __init__(self):
+    def __init__(self, name: list[int]):
         """
         self.subscopes; De scopes die in 'deze' scope zitten.
         """
@@ -19,6 +19,7 @@ class SymbolTable:
         self.curScope: int = 0
         self.subScopes: list[SymbolTable] = [] # Children
         self.parentScope: SymbolTable = None
+        self.name: list[int] = name
 
     def add_symbol(self, name, type):
         s = self.curScope
@@ -71,34 +72,42 @@ class SymbolTable:
         elif errortype == "unint":
             raise Exception(f"Syntax Error; Symbol '{name}' is uninitialized")
         else:
+            self.st_print(True)
             raise Exception(f"Symbol '{name}' is ?????????")
 
-    def open_scope(self, vis:astvis):
+    def open_scope(self, vis: AstVisitor):
         #self.scopes.append(dict())
         #self.curScope += 1
-        new_st = SymbolTable()
-        self.subScopes.append(new_st)
+        new_name = self.name.copy()
+        new_id = 0 + len(self.subScopes)
+        new_name.append(new_id)
+        new_st = SymbolTable(new_name)
         new_st.parentScope = self
+
+        self.subScopes.append(new_st)
         vis.cur_symbol_table = new_st
 
-    def close_scope(self, vis:astvis):
+    def close_scope(self, vis: AstVisitor):
         #self.st_print()
         #self.scopes.pop(-1)
         #self.curScope =- 1
         vis.cur_symbol_table = self.parentScope
 
 
-    def st_print(self):
+    def st_print(self, flag = False):
         n = self
-        i = 0
-        print(f"Scope {i}:")
-        for name, info in self.scopes[i].items():
+        if flag:
+            print("***")
+        print(f"Scope {self.name}:")
+        for name, info in self.scopes[0].items():
             print(f"{name} => {info}")
         print()
         ""
         for x in n.subScopes:
             print("Subscope: ")
             x.st_print()
+        if flag:
+            print("*_*")
 
         """for i in range(0,len(self.scopes)):
             print(f"Scope {i}:")

@@ -7,7 +7,7 @@ from SymbolTable import SymbolTable
 
 class AstVisitor(CVisitor):
     def __init__(self):
-        self.symbol_table = SymbolTable()
+        self.symbol_table = SymbolTable([0])
         self.cur_symbol_table = self.symbol_table
 
     def visitRun(self, ctx: CParser.RunContext):
@@ -99,7 +99,7 @@ class AstVisitor(CVisitor):
         node = BlockNode()
         nodes = []
         statements = ctx.statement()
-        if flag:
+        if not flag:
             self.symbol_table.open_scope(self)
         for statement in statements:
             temp = self.visitStatement(statement)
@@ -111,7 +111,7 @@ class AstVisitor(CVisitor):
                     break
                 nodes.append(temp)
         node.children = nodes
-        if flag:
+        if not flag:
             self.symbol_table.close_scope(self)
         return node
 
@@ -146,6 +146,7 @@ class AstVisitor(CVisitor):
             node = BlockNode()
             node.block = self.visitBlock_scope(ctx.block_scope())
             node.children.append(node.block)
+
         if ctx.comment() and node is None:
             node = self.visitComment(ctx.comment())
         elif ctx.comment():
