@@ -79,6 +79,20 @@ class AstVisitor(CVisitor):
         self.cur_symbol_table.add_symbol_value(node.name, 0)
         return [node]
 
+
+    def visitForward_declare(self, ctx:CParser.Forward_declareContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        node = FunctionNode()
+        node.declaration = self.visitFunction_declaration(ctx.function_declaration())
+        flag = False
+        if node.declaration.name == "main":
+            flag = True
+        #node.block = self.visitBlock_scope(ctx.block_scope(), flag)
+        node.children = [node.declaration]
+        return node
+
     def visitFunction(self, ctx: CParser.FunctionContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -100,7 +114,7 @@ class AstVisitor(CVisitor):
         nodes = []
         statements = ctx.statement()
         if not flag:
-            self.symbol_table.open_scope(self)
+            self.cur_symbol_table.open_scope(self)
         for statement in statements:
             temp = self.visitStatement(statement)
             if isinstance(temp, tuple):
@@ -112,7 +126,7 @@ class AstVisitor(CVisitor):
                 nodes.append(temp)
         node.children = nodes
         if not flag:
-            self.symbol_table.close_scope(self)
+            self.cur_symbol_table.close_scope(self)
         return node
 
     def visitStatement(self, ctx: CParser.StatementContext):

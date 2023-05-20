@@ -14,16 +14,16 @@ def main(argv):
 
     if 'output' not in os.listdir('tests'):  # Als de folder 'll' nog niet bestaat
         os.mkdir('tests/output')  # Maak een folder genaamd 'output' aan
-    if 'll_files' not in os.listdir('tests/output'):  # Als de folder 'll' nog niet bestaat
-        os.mkdir('tests/output/ll_files')  # Maak een folder genaamd 'll' aan
+    #if 'll_files' not in os.listdir('tests/output'):  # Als de folder 'll' nog niet bestaat
+    #    os.mkdir('tests/output/ll_files')  # Maak een folder genaamd 'll' aan
     if visFlag and 'ast_files' not in os.listdir('tests/output'): # Als de folder 'output' nog niet bestaat
         os.mkdir('tests/output/ast_files') # Maak een folder genaamd 'output' aan
         os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
     #c_directory_path = "tests/text_files"
-    ll_directory_path = "tests/output/ll_files"
+    #ll_directory_path = "tests/output/ll_files"
     #tests_directory_path = "tests/projecten_123_zonder_main"
-    tests_directory_path = "tests/alle_projecten"
+    #tests_directory_path = "tests/alle_projecten"
     tests_directory_path = "tests/projecten_4"
 
     for foldername in os.listdir(tests_directory_path):
@@ -45,15 +45,15 @@ def main(argv):
                 #try:
                 print("Entering: " + filename, flush=True)
                 ast = visitor.visit(tree)
-                llvm = LLVMVisitor()
-                llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
+                #llvm = LLVMVisitor()
+                #llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
                 ast = optimizer.optimize(ast, visitor.symbol_table)
 
                 if visFlag:
                     ast.vis(filename)
                     visitor.symbol_table.st_print()
 
-                    ast.generateLLVM(llvm)
+                    #ast.generateLLVM(llvm)
                 #except Exception as error:
                 #     print(error, flush=True)
             else:

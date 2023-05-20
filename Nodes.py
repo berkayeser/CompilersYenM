@@ -108,7 +108,9 @@ class ReturnNode(Node):
     returnValue = None
 
     def getASTvalue(self):
-        if self.returnValue.type == "term":
+        if type(self.returnValue) == str:
+            return self.type + " " + self.returnValue
+        elif self.returnValue.type == "term":
             return self.type + " " + str(self.returnValue.operation)
         elif self.returnValue.type == "variable":
             return self.type + " " + str(self.returnValue.name)
