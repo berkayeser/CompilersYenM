@@ -22,7 +22,9 @@ class AstVisitor(CVisitor):
             if isinstance(child, CParser.FunctionContext):
                 node.children.append(self.visitFunction(child))
             elif isinstance(child, CParser.Global_varContext):
-                node.children.append(self.visitGlobal_var(child))
+                node.children.append(self.visitStatement(child))
+
+                #node.children.append(self.visitGlobal_var(child))
             elif isinstance(child, CParser.Forward_declareContext):
                 node.children.append(self.visitForward_declare(child))
             elif isinstance(child, CParser.CommentContext):
@@ -101,7 +103,7 @@ class AstVisitor(CVisitor):
         node.declaration = self.visitFunction_declaration(ctx.function_declaration())
         flag = False
         if node.declaration.name == "main":
-            flag = True
+            flag = False
         node.block = self.visitBlock_scope(ctx.block_scope(), flag)
         node.children = [node.declaration, node.block]
         return node
@@ -221,6 +223,8 @@ class AstVisitor(CVisitor):
 
         node = PrintfNode()
         node.string = ctx.STRINGLITERAL().getText()[1:-1]
+        node.scope = self.cur_symbol_table.name
+
         if ctx.argument():
             node.arguments = self.visitArgument(ctx.argument())
         return node
@@ -384,6 +388,9 @@ class AstVisitor(CVisitor):
             node.left = self.visitConst_instantiation(ctx.const_instantiation())
         node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
+        node.scope = self.cur_symbol_table.name
+        #print(str(node)+str(node.scope))
+
 
         # Adding variable values to the symbol table
         if node.right.type == 'literal':
@@ -394,6 +401,14 @@ class AstVisitor(CVisitor):
                     self.cur_symbol_table.symbol_used_twice(node.left.name)
                 else:
                     self.cur_symbol_table.add_symbol_value(node.left.name, node.right.value)
+                    # Scope toevoegen
+                    #node.scope = self.cur_symbol_table.name
+                    """print("printing astvis")
+                    print(node.scope)
+                    print(node)
+                    print()"""
+
+
             # else:  bv. nodelefttype = unary bv "*ptr = 2;"
 
         # Operations of incompatible types

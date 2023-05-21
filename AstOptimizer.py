@@ -19,16 +19,44 @@ class AstOptimizer:
 
     def constantPropagationRecursive(self, node: Node):
         propagated = False
+
+        # First, we will fill in the variables in a printf function.
+        # The printf node, will have no children
+        if node.type == "printf":
+            for i in range(0,len(node.arguments)):
+                avt = node.arguments[i].value.type
+                if avt == "variable":
+                    avn = node.arguments[i].value.name
+                    s = node.scope
+                    avs = self.st.get_symbol(avn, None, s)
+
+                    if avs['value'] is not None and avs['assignOnce'] is True:
+                        v = avs['value']
+                        new_node = LiteralNode()
+                        new_node.value = v
+                        nlt = avs['type']
+                        if nlt[0:5] == "const":
+                            nlt = nlt[5:]
+                        new_node.literalType = nlt
+                        node.arguments[i].value = new_node
+
+
         for i in range(len(node.children)):
             childNode = node.children[i]
             if childNode.type == "assignment":
+                crt = childNode.right.type
+
                 # assignment .right logicexpression/-boolexpression/-term .right factor/element
-                if childNode.right.type == "variable" and self.st.get_symbol(childNode.right.name)[
-                        'value'] is not None and self.st.get_symbol(childNode.right.name)['assignOnce'] is True:
-                        v = self.st.get_symbol(childNode.right.name)['value']
+                if crt == "variable":
+                    s = childNode.scope
+                    #print( "s " +str(childNode) +  str(s) + str(len(s)))
+
+                    cnrs = self.st.get_symbol(childNode.right.name, None, s)
+                    if cnrs['value'] is not None and cnrs['assignOnce'] is True:
+                        v = cnrs['value']
                         node = LiteralNode()
                         node.value = v
-                        nlt = self.st.get_symbol(childNode.right.name)['type']
+                        nlt = cnrs['type']
                         if nlt[0:5] == "const":
                             nlt = nlt[5:]
                         node.literalType = nlt

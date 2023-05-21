@@ -18,6 +18,7 @@ class AST:
 
         # Define a recursive function to visit each node in the AST
         def visit(node, parent=None):
+            skip_flag = False
             # Assign a unique ID to the node gebaseerd op zijn memory address
             id = str(hash(node))
             # Label the node with its class name
@@ -27,11 +28,20 @@ class AST:
                 label = "/0"
             elif label == "compare":
                 label = node.operation
-            dot.node(id, label)
+            elif label == "line": # Geen 'line' nodes in AST
+                skip_flag = True
+                id = parent
+
+            if not skip_flag:
+                dot.node(id, label)
 
             # Add an edge from the parent node to this node
-            if parent:
+            if parent and not skip_flag:
                 dot.edge(parent, id)
+
+            if label == "printf":
+                for arg in node.arguments:
+                    visit(arg.value, id)
 
             # Recursively visit each child node
             for child in node.children:
@@ -47,7 +57,7 @@ class AST:
 
         with open(dotfilename, 'w') as f:
             f.write(dot.source)
-        # Convert the Dot file to a graphViz graph with Pydot
+        # Converteer the Dot file to a graphViz graph with Pydot
         (graph,) = pydot.graph_from_dot_file(dotfilename)
         graph.write_png(f'tests/output/ast_files/{fn}.png')
 

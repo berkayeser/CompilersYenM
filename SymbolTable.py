@@ -3,39 +3,29 @@ class AstVisitor:
     pass
 
 class SymbolTable:
-    """
-    [
-    {..., nested Subscopes = [{},{},{}]},
-    {},
-    {},
-    ]
-    """
     def __init__(self, name: list[int]):
         """
         self.subscopes; De scopes die in 'deze' scope zitten.
         """
-        self.scopes: list[dict] = [{}]
-        #self.scopes: dict = {}
-        self.curScope: int = 0
+        self.scopes: dict = {} # 1 scope
         self.subScopes: list[SymbolTable] = [] # Children
         self.parentScope: SymbolTable = None
         self.name: list[int] = name
 
     def add_symbol(self, name, type):
-        s = self.curScope
-        if name in self.scopes[s]:
+        if name in self.scopes:
             if self.get_symbol(name)['type'] == type:
                 #self.st_print()
                 raise Exception(f"Redeclaration: Symbol '{name}' already declared in current scope")
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scopes[s][name] = {'type': type, 'value': None, 'assignOnce' : True}
+            self.scopes[name] = {'type': type, 'value': None, 'assignOnce' : True}
 
     def symbol_used_current(self,name:str):
-        if name not in self.scopes[self.curScope]:
+        if name not in self.scopes:
             return False
-        elif self.scopes[self.curScope][name]['value'] is None:
+        elif self.scopes[name]['value'] is None:
             return False
         else:
             return True
@@ -48,25 +38,27 @@ class SymbolTable:
         :param name: The symbol
         :return:
         """
-        self.scopes[self.curScope][name]['assignOnce'] = False
+        self.scopes[name]['assignOnce'] = False
 
     def add_symbol_value(self, name, value):
-        if name not in self.scopes[self.curScope]:
+        if name not in self.scopes:
             # instantieren in huidige scope
             symbol = self.get_symbol(name, "undef")
             self.add_symbol(name, symbol['type'])
-        self.scopes[self.curScope][name]['value'] = value
+        self.scopes[name]['value'] = value
 
-    def get_symbol(self, name, errortype=None):
-        """for scope in reversed(self.scopes):
-            if name in scope:
-                return scope[name]"""
+    def get_symbol(self, name, errortype=None, input_scope: list[int]=None):
         scope = self
+        if input_scope is not None:
+            input_scope = input_scope.copy()
+            input_scope.pop(0)
+            for s in input_scope:
+                scope = scope.subScopes[s]
         while scope is not None:
-            if name in scope.scopes[0]:
-
-                return scope.scopes[0][name]
+            if name in scope.scopes:
+                return scope.scopes[name]
             scope = scope.parentScope
+
         if errortype == "undef":
             raise Exception(f"Syntax Error; Symbol '{name}' is undefined")
         elif errortype == "unint":
@@ -97,17 +89,23 @@ class SymbolTable:
     def st_print(self, flag = False):
         n = self
         if flag:
-            print("***")
+            print("*****")
+
         print(f"Scope {self.name}:")
-        for name, info in self.scopes[0].items():
-            print(f"{name} => {info}")
+
+        if len(self.scopes) == 0:
+            print("empty")
+        else:
+            for name, info in self.scopes.items():
+                print(f"{name} => {info}")
+
         print()
         ""
         for x in n.subScopes:
             print("Subscope: ")
-            x.st_print()
+            x.st_print(False)
         if flag:
-            print("*_*")
+            print("*___*")
 
         """for i in range(0,len(self.scopes)):
             print(f"Scope {i}:")

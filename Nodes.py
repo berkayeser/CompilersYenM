@@ -52,8 +52,12 @@ class FunctionNode(Node):
 
 class PrintfNode(Node):
     type = "printf"
-    string = None
-    arguments = []
+    string = None # bv %d;
+    arguments = [] #  : list[ArgumentNode]
+    scope: list[int] = []
+
+    def getASTvalue(self):
+        return self.type
 
 
 class ScanfNode(Node):
@@ -206,6 +210,7 @@ class AssignmentNode(Node):
     type = "assignment"
     left = None
     right = None
+    scope: list[int] = []
 
     def generateCode(self, llvm):
         return llvm.visitAssignment(self)

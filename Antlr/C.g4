@@ -8,7 +8,12 @@ include
     : INCLUDE STDIO;
 
 global_var
-    : (instantiation | const_instantiation) EQUALS logicexpression SEMICOLON;
+    : comment? expression_statement SEMICOLON
+    | comment? array_initialisation SEMICOLON
+    | comment? jump_statement SEMICOLON
+    | comment? compound_statement
+    | comment? block_scope
+    | comment;
 
 function
     : function_declaration block_scope;

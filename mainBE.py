@@ -51,7 +51,7 @@ def main(argv):
 
                 if visFlag:
                     ast.vis(filename)
-                    visitor.symbol_table.st_print()
+                    #visitor.symbol_table.st_print(True)
 
                     #ast.generateLLVM(llvm)
                 #except Exception as error:
