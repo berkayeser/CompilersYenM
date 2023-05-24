@@ -20,6 +20,8 @@ class AstOptimizer:
     def constantPropagationRecursive(self, node: Node):
         propagated = False
 
+
+
         # First, we will fill in the variables in a printf function.
         # The printf node, will have no children
         if node.type == "printf":
@@ -40,7 +42,7 @@ class AstOptimizer:
                         new_node.literalType = nlt
                         node.arguments[i].value = new_node
 
-
+        # Secondly, all other nodes
         for i in range(len(node.children)):
             childNode = node.children[i]
             if childNode.type == "assignment":
@@ -101,11 +103,28 @@ class AstOptimizer:
                         childNode.right.right = node
                         childNode.right.children[1] = node
 
-
+        self.delReturnStatement(node)
+        print(node.type)
         for child in node.children:
+
             if self.constantPropagationRecursive(child):
                 propagated = True
         return propagated
+
+    def delReturnStatement(self, node:BlockNode):
+        # Do not generate code for statements that appear after a return in a function
+        rbc = ["return", "break", "continue"]
+        for c2 in range(0, len(node.children)):
+            ncc2c = node.children[c2].children
+            if ncc2c and ncc2c[0].type in rbc:
+                # Statements na 'return' verwijderen
+                # 1 uit blockNode.children ( general Node attribute )
+                node.children = node.children[0:c2 + 1]
+
+                # 2 uit blockNode.nodes ( Block node specific attribute )
+                if (node.block is not None):
+                    print("error")
+                break
 
     def constantFolding(self, tree: AST):
         folded = True

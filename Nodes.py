@@ -47,7 +47,7 @@ class FuncDeclareNode(Node):
 class FunctionNode(Node):
     type = "function"
     declaration = None  # FuncDeclareNode
-    block = []
+    block = [] #BlockNode
 
 
 class PrintfNode(Node):
