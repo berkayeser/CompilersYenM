@@ -1,36 +1,37 @@
-#from AstVisitor import AstVisitor as astvis
+# from AstVisitor import AstVisitor as astvis
 class AstVisitor:
     pass
+
 
 class SymbolTable:
     def __init__(self, name: list[int]):
         """
         self.subscopes; De scopes die in 'deze' scope zitten.
         """
-        self.scopes: dict = {} # 1 scope
-        self.subScopes: list[SymbolTable] = [] # Children
+        self.scope1: dict = {}  # 1 scope
+        self.subScopes: list[SymbolTable] = []  # Children
         self.parentScope: SymbolTable = None
         self.name: list[int] = name
 
-    def add_symbol(self, name, type):
-        if name in self.scopes:
+    def add_symbol(self, name, type, function:bool = False):
+        if name in self.scope1 and not function:
             if self.get_symbol(name)['type'] == type:
-                #self.st_print()
+                # self.st_print()
                 raise Exception(f"Redeclaration: Symbol '{name}' already declared in current scope")
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scopes[name] = {'type': type, 'value': None, 'assignOnce' : True}
+            self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True}
 
-    def symbol_used_current(self,name:str):
-        if name not in self.scopes:
+    def symbol_used_current(self, name: str):
+        if name not in self.scope1:
             return False
-        elif self.scopes[name]['value'] is None:
+        elif self.scope1[name]['value'] is None:
             return False
         else:
             return True
 
-    def symbol_used_twice(self, name:str):
+    def symbol_used_twice(self, name: str):
         """
         This function gets called when a symbol has a declaration.
         The symbol then gets marked with 'assignOnce'.
@@ -38,16 +39,16 @@ class SymbolTable:
         :param name: The symbol
         :return:
         """
-        self.scopes[name]['assignOnce'] = False
+        self.scope1[name]['assignOnce'] = False
 
     def add_symbol_value(self, name, value):
-        if name not in self.scopes:
+        if name not in self.scope1:
             # instantieren in huidige scope
             symbol = self.get_symbol(name, "undef")
             self.add_symbol(name, symbol['type'])
-        self.scopes[name]['value'] = value
+        self.scope1[name]['value'] = value
 
-    def get_symbol(self, name, errortype=None, input_scope: list[int]=None):
+    def get_symbol(self, name, errortype=None, input_scope: list[int] = None):
         scope = self
         if input_scope is not None:
             input_scope = input_scope.copy()
@@ -55,8 +56,8 @@ class SymbolTable:
             for s in input_scope:
                 scope = scope.subScopes[s]
         while scope is not None:
-            if name in scope.scopes:
-                return scope.scopes[name]
+            if name in scope.scope1:
+                return scope.scope1[name]
             scope = scope.parentScope
 
         if errortype == "undef":
@@ -64,12 +65,12 @@ class SymbolTable:
         elif errortype == "unint":
             raise Exception(f"Syntax Error; Symbol '{name}' is uninitialized")
         else:
-            self.st_print(True)
+            scope.st_print()
             raise Exception(f"Symbol '{name}' is ?????????")
 
     def open_scope(self, vis: AstVisitor):
-        #self.scopes.append(dict())
-        #self.curScope += 1
+        # self.scopes.append(dict())
+        # self.curScope += 1
         new_name = self.name.copy()
         new_id = 0 + len(self.subScopes)
         new_name.append(new_id)
@@ -80,23 +81,27 @@ class SymbolTable:
         vis.cur_symbol_table = new_st
 
     def close_scope(self, vis: AstVisitor):
-        #self.st_print()
-        #self.scopes.pop(-1)
-        #self.curScope =- 1
+        # self.st_print()
+        # self.scopes.pop(-1)
+        # self.curScope =- 1
         vis.cur_symbol_table = self.parentScope
 
+    def open_last_scope(self, vis:AstVisitor):
 
-    def st_print(self, flag = False):
+        vis.cur_symbol_table = self.subScopes[-1]
+
+
+    def st_print(self, flag=True):  # flag=True voor de main plaats waar je st_print oproept
         n = self
         if flag:
             print("*****")
 
         print(f"Scope {self.name}:")
 
-        if len(self.scopes) == 0:
+        if len(self.scope1) == 0:
             print("empty")
         else:
-            for name, info in self.scopes.items():
+            for name, info in self.scope1.items():
                 print(f"{name} => {info}")
 
         print()

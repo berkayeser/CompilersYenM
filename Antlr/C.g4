@@ -239,7 +239,7 @@ IDENTIFIER
     : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
 
 FLOATLITERAL
-    : DIGIT+ ((',' | '.') DIGIT+)?;
+    : DIGIT+ ((',' | '.') DIGIT+)+;
 
 INTLITERAL
     : DIGIT+;

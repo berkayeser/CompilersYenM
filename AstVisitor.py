@@ -7,9 +7,9 @@ from SymbolTable import SymbolTable
 
 class AstVisitor(CVisitor):
     def __init__(self):
-        self.symbol_table = SymbolTable([0])
-        self.cur_symbol_table = self.symbol_table
-
+        self.symbol_table: SymbolTable = SymbolTable([0])
+        self.cur_symbol_table: SymbolTable = self.symbol_table
+        self.functions: list[FuncDeclareNode] = []
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -45,6 +45,59 @@ class AstVisitor(CVisitor):
         node.children = [node.left, node.right]
         return node
 
+    def append_arguments(self, args:list[FunctionArgNode]):
+        list_args = []
+        for arg in args:
+            new_arg: str = ""
+            if arg.const:
+                new_arg += "const"
+            if arg.reference:
+                new_arg += "*"
+            if arg.varType:
+                new_arg += arg.varType
+            list_args.append(new_arg)
+
+        return list_args
+    def semantic_function_check(self, node: FuncDeclareNode):
+        nrt = node.returnType
+        for f in self.functions:
+            frt = f.returnType
+            if f.name == node.name:
+                # 2 functies met dezelfde naam -> alle attributen moeten hetzelfde zijn
+
+                # 1) Returntype checken
+                if frt != nrt:
+                    raise Exception(f"Semantic error: Conflicting return type for '{node.name}'; "
+                                    f"declared '{frt}' return type, but previously declared '{nrt}' return type.")
+
+                # 2) Arguments checken
+                fa: list[str] = self.append_arguments(f.arguments)
+                na: list[str] = self.append_arguments(node.arguments)
+                fal = len(fa)
+
+
+                if len(na) != fal:
+                    raise Exception(f"Semantic error: Conflicting parameters for '{node.name}';"
+                                    f"has {na}, but previously declared {fa}")
+
+                for i in range(0,fal):
+                    if fa[i] != na[i]:
+                        raise Exception(f"Semantic error: Conflicting parameters for '{node.name}'; "
+                                        f"has {na}, but previously declared {fa}")
+                    """if f.arguments[i].const != node.arguments[i].const:
+                        raise Exception(f"Semantic error: Conflicting parameter type for '{node.name}'; "
+                                        f"conflicting parameter attribute: reference.")
+                    elif f.arguments[i].varType != node.arguments[i].varType:
+                        raise Exception(f"Semantic error: Conflicting return type for '{node.name}'; "
+                                        f"conflicting parameter attribute: reference.")
+                    elif f.arguments[i].reference != node.arguments[i].reference:
+                        print(node.arguments[i].reference)
+                        raise Exception(f"Semantic error: Conflicting return type for '{node.name}'; "
+                                        f"conflicting parameter attribute: reference.")"""
+
+
+
+
     def visitFunction_declaration(self, ctx: CParser.Function_declarationContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -58,6 +111,10 @@ class AstVisitor(CVisitor):
         if ctx.argument_declaration():
             node.arguments = self.visitArgument_declaration(ctx.argument_declaration())
             node.children = node.arguments
+
+        self.semantic_function_check(node)
+        # Toevoegen aan functie lijst
+        self.functions.append(node)
         return node
 
     def visitArgument_declaration(self, ctx: CParser.Argument_declarationContext):
@@ -71,14 +128,17 @@ class AstVisitor(CVisitor):
             node.reference = True
         node.varType = ctx.type_().getText()
         node.name = ctx.IDENTIFIER().getText()
+
+        self.cur_symbol_table.add_symbol(node.name, node.varType, True)
+        self.cur_symbol_table.add_symbol_value(node.name, 0)
+
         if ctx.COMMA():
             allArgs = [node]
             arguments = self.visitArgument_declaration(ctx.argument_declaration())
             for arg in arguments:
                 allArgs.append(arg)
             return allArgs
-        self.cur_symbol_table.add_symbol(node.name, node.varType)
-        self.cur_symbol_table.add_symbol_value(node.name, 0)
+
         return [node]
 
 
@@ -95,28 +155,75 @@ class AstVisitor(CVisitor):
         node.children = [node.declaration]
         return node
 
+    def find_returns(self, node: BlockNode) -> list[ReturnNode]:
+        listrn: list[ReturnNode] = []
+        # Find all return nodes in this block
+        for child in node.children:
+            if child.type == "if":
+                listrn = listrn + self.find_returns(child.block)
+                if child.elseNode:
+                    listrn = listrn + self.find_returns(child.elseNode)
+
+            if child.children:
+
+                if child.children[0].type == "return":
+                    listrn.append(child.children[0])
+        return listrn
+
+    def semantic_return_check(self, node):
+        # Check the consistency of the return statement with the return type of the enclosing function.
+        rt = node.declaration.returnType
+
+        # Return_Node 's vinden in Block_Node
+        listrn: list[ReturnNode] = self.find_returns(node.block)  # Return Node Value
+
+        for rnv in listrn:
+            s = rnv.scope
+            rnv = rnv.returnValue
+
+            if rnv == "void":
+                pass
+            elif rnv.type == "literal":
+                rnv = rnv.literalType
+            elif rnv.type == "variable":
+                ##self.cur_symbol_table.open_last_scope(self)
+                rnv = self.symbol_table.get_symbol(rnv.name, None, s)['type']
+                ##rnv = self.cur_symbol_table.get_symbol(rnv.name)['type']
+                ##self.cur_symbol_table.close_scope(self)
+            elif rnv.type == "term":
+                # IDK what to do here
+                rnv = rt
+            elif rnv.type == "factor":
+                rnv = rt
+            else:
+                print("error197")
+
+            if rnv != rt:
+                raise Exception(f"Semantic error: Function declared return type '{rt}' but returns type '{rnv}'.")
+
+
     def visitFunction(self, ctx: CParser.FunctionContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = FunctionNode()
         node.declaration = self.visitFunction_declaration(ctx.function_declaration())
-        flag = False
-        if node.declaration.name == "main":
-            flag = False
-        node.block = self.visitBlock_scope(ctx.block_scope(), flag)
+
+        node.block = self.visitBlock_scope(ctx.block_scope())
+
+        self.semantic_return_check(node)
+
         node.children = [node.declaration, node.block]
         return node
 
-    def visitBlock_scope(self, ctx: CParser.Block_scopeContext, flag = False):
+    def visitBlock_scope(self, ctx: CParser.Block_scopeContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = BlockNode()
         nodes = []
         statements = ctx.statement()
-        if not flag:
-            self.cur_symbol_table.open_scope(self)
+        self.cur_symbol_table.open_scope(self)
         for statement in statements:
             temp = self.visitStatement(statement)
             if isinstance(temp, tuple):
@@ -127,8 +234,8 @@ class AstVisitor(CVisitor):
                     break
                 nodes.append(temp)
         node.children = nodes
-        if not flag:
-            self.cur_symbol_table.close_scope(self)
+
+        self.cur_symbol_table.close_scope(self)
         return node
 
     def visitStatement(self, ctx: CParser.StatementContext):
@@ -257,6 +364,7 @@ class AstVisitor(CVisitor):
                 node.returnValue = self.visitLogicexpression(ctx.logicexpression())
             else:
                 node.returnValue = "void"
+            node.scope = self.cur_symbol_table.name
             return node
 
     def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1):
@@ -488,8 +596,8 @@ class AstVisitor(CVisitor):
                 nodeLt = "const" + nodeLt
 
             if nodeLt != nodeRt:
-                raise Exception(
-                    f"Syntax Error; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+                print(
+                    f"Syntax Error, Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
         return node
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext, line_nr: int = -1):

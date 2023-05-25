@@ -111,6 +111,14 @@ class ReturnNode(Node):
     type = "return"
     returnValue = None
 
+    def convert(self, node):
+        if node.type == "variable":
+            return node.name
+        elif node.type == "literal":
+            return node.value
+        else:
+            print("error120")
+
     def getASTvalue(self):
         if type(self.returnValue) == str:
             return self.type + " " + self.returnValue
@@ -118,7 +126,10 @@ class ReturnNode(Node):
             return self.type + " " + str(self.returnValue.operation)
         elif self.returnValue.type == "variable":
             return self.type + " " + str(self.returnValue.name)
-        else:
+        elif self.returnValue.type == "factor":
+            return self.type + " " + str(self.convert(self.returnValue.left)) \
+                + str(self.returnValue.operation) + str(self.convert(self.returnValue.right))
+        else: # literal node
             return self.type + " " + str(self.returnValue.value)
 
 

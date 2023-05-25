@@ -104,7 +104,7 @@ class AstOptimizer:
                         childNode.right.children[1] = node
 
         self.delReturnStatement(node)
-        print(node.type)
+
         for child in node.children:
 
             if self.constantPropagationRecursive(child):
