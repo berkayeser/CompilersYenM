@@ -28,7 +28,9 @@ class AST:
                 label = "/0"
             elif label == "compare":
                 label = node.operation
-            elif label == "line": # Geen 'line' nodes in AST
+            elif label == "assignment":
+                label = "="
+            elif label == "line" or label == "special_unary": # Geen 'line' nodes in AST
                 skip_flag = True
                 id = parent
 
