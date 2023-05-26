@@ -73,9 +73,9 @@ class AstVisitor(CVisitor):
             newNode.const = isConst
             newNode.varType = ctx.type_().getText()
             if isConst:
-                temp = self.visitConst(ctx.const(0))
+                temp = self.visitConst(ctx.const(i))
             else:
-                temp = self.visitNot_const(ctx.not_const(0))
+                temp = self.visitNot_const(ctx.not_const(i))
             newNode.name = temp[0]
 
             if temp[1]:
@@ -343,7 +343,7 @@ class AstVisitor(CVisitor):
 
         node = ArrayNode()
         node.name = ctx.IDENTIFIER().getText()
-        node.index = int(ctx.INTLITERAL().getText())
+        node.index = self.visitLogicexpression(ctx.logicexpression())
         return node
 
     def visitFunction_call(self, ctx: CParser.Function_callContext):
@@ -391,7 +391,10 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
 
         node = ArgumentNode()
-        node.value = self.visitLogicexpression(ctx.logicexpression())
+        if ctx.STRINGLITERAL():
+            node.value = ctx.STRINGLITERAL().getText()
+        else:
+            node.value = self.visitLogicexpression(ctx.logicexpression())
         if ctx.COMMA():
             allArgs = [node]
             arguments = self.visitArgument(ctx.argument())
@@ -476,6 +479,7 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
 
         While = WhileNode()
+
         Statement = StatementNode()
         condition = self.visitFor_condition(ctx.for_condition(), line_nr)
         Statement.statement = condition[0]
@@ -491,7 +495,15 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
-        condition = [self.visitAssignment(ctx.assignment(), line_nr), self.visitLogicexpression(ctx.logicexpression()),
+        temp = None
+
+        # changed assignment to assignment or instantiationExpression
+        if ctx.instantiationExpression():
+            temp = self.visitInstantiationExpression(ctx.instantiationExpression())[0]
+        else:
+            temp = self.visitAssignment(ctx.assignment(), line_nr)
+
+        condition = [temp, self.visitLogicexpression(ctx.logicexpression()),
                      self.visitUpdate_expression(ctx.update_expression())]
 
         return condition

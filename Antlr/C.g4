@@ -35,7 +35,7 @@ scanf
     : SCANF LBRACKET STRINGLITERAL (COMMA argument)? RBRACKET;
 
 argument
-    : logicexpression (COMMA argument)? ;
+    : (logicexpression | STRINGLITERAL) (COMMA argument)? ;
 
 statement
     : comment? expression_statement SEMICOLON
@@ -92,7 +92,7 @@ condition
     : LBRACKET logicexpression RBRACKET;
 
 for_condition
-    : LBRACKET assignment SEMICOLON logicexpression SEMICOLON update_expression RBRACKET;
+    : LBRACKET (assignment | instantiationExpression) SEMICOLON logicexpression SEMICOLON update_expression RBRACKET;
 
 update_expression
     : ((IDENTIFIER | pointer) EQUALS)? logicexpression;
@@ -149,7 +149,7 @@ element
     | (typecast | unaryops) element;
 
 array
-    : IDENTIFIER LSQUARE INTLITERAL RSQUARE;
+    : IDENTIFIER LSQUARE logicexpression RSQUARE;
 
 logicops
     : LOGICOPS;
