@@ -22,7 +22,7 @@ class AstVisitor(CVisitor):
             if isinstance(child, CParser.FunctionContext):
                 node.children.append(self.visitFunction(child))
             elif isinstance(child, CParser.Global_varContext):
-                node.children.append(self.visitStatement(child))
+                node.children.extend(self.visitGlobal_var(child))
 
                 #node.children.append(self.visitGlobal_var(child))
             elif isinstance(child, CParser.Forward_declareContext):
@@ -36,14 +36,65 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
-        node = AssignmentNode()
-        if ctx.instantiation():
-            node.left = self.visitInstantiation(ctx.instantiation())
-        elif ctx.const_instantiation():
-            node.left = self.visitConst_instantiation(ctx.const_instantiation())
-        node.right = self.visitLogicexpression(ctx.logicexpression())
-        node.children = [node.left, node.right]
-        return node
+        nodes = []
+        # added array initialisation
+        if ctx.instantiationExpression():
+            nodes = self.visitInstantiationExpression(ctx.instantiationExpression())
+        elif ctx.array_initialisation():
+            nodes = [self.visitArray_initialisation(ctx.array_initialisation())]
+
+        # is a list
+        return nodes
+
+    def visitInstantiationExpression(self, ctx: CParser.InstantiationExpressionContext):
+        nodes = []
+        isConst = False
+        if ctx.CONST():
+            isConst = True
+        firstNode = InstantiationNode()
+        firstNode.const = isConst
+        firstNode.varType = ctx.type_().getText()
+        if isConst:
+            temp = self.visitConst(ctx.const(0))
+        else:
+            temp = self.visitNot_const(ctx.not_const(0))
+        firstNode.name = temp[0]
+
+        if temp[1]:
+            assignmentNode = AssignmentNode()
+            assignmentNode.left = firstNode
+            assignmentNode.right = temp[1]
+            assignmentNode.children = [firstNode, temp[1]]
+            nodes.append(assignmentNode)
+        else:
+            nodes.append(firstNode)
+        for i in range(len(ctx.COMMA())):
+            newNode = InstantiationNode()
+            newNode.const = isConst
+            newNode.varType = ctx.type_().getText()
+            if isConst:
+                temp = self.visitConst(ctx.const(0))
+            else:
+                temp = self.visitNot_const(ctx.not_const(0))
+            newNode.name = temp[0]
+
+            if temp[1]:
+                assignmentNode = AssignmentNode()
+                assignmentNode.left = newNode
+                assignmentNode.right = temp[1]
+                assignmentNode.children = [newNode, temp[1]]
+                nodes.append(assignmentNode)
+            else:
+                nodes.append(newNode)
+        return nodes
+
+    def visitNot_const(self, ctx: CParser.Not_constContext):
+        if ctx.EQUALS():
+            return ctx.IDENTIFIER(), self.visitLogicexpression(ctx.logicexpression())
+        return ctx.IDENTIFIER(), None
+
+    def visitConst(self, ctx: CParser.ConstContext):
+        return ctx.IDENTIFIER(), self.visitLogicexpression(ctx.logicexpression())
 
     def append_arguments(self, args:list[FunctionArgNode]):
         list_args = []
@@ -200,7 +251,6 @@ class AstVisitor(CVisitor):
 
             if rnv != rt:
                 raise Exception(f"Semantic error: Function declared return type '{rt}' but returns type '{rnv}'.")
-
 
     def visitFunction(self, ctx: CParser.FunctionContext):
         if ctx.exception is not None:
@@ -472,6 +522,9 @@ class AstVisitor(CVisitor):
             node.children = [self.visitDeclaration(ctx.declaration(), line_nr)]
         elif ctx.logicexpression():
             node.children = [self.visitLogicexpression(ctx.logicexpression())]
+        # added instantiationExpression
+        elif ctx.instantiationExpression():
+            node.children = self.visitInstantiationExpression(ctx.instantiationExpression())
         else:
             node.children = []
         return node
@@ -492,8 +545,9 @@ class AstVisitor(CVisitor):
         node = AssignmentNode()
         if ctx.declaration():
             node.left = self.visitDeclaration(ctx.declaration(), line_nr)
-        elif ctx.const_instantiation():
-            node.left = self.visitConst_instantiation(ctx.const_instantiation())
+
+        # removed const instantiation
+
         node.right = self.visitLogicexpression(ctx.logicexpression())
         node.children = [node.left, node.right]
         node.scope = self.cur_symbol_table.name
@@ -604,9 +658,10 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         node = None
-        if ctx.instantiation():
-            node = self.visitInstantiation(ctx.instantiation())
-        elif ctx.IDENTIFIER():  # bv x:var = 3
+
+        # removed instantiation
+
+        if ctx.IDENTIFIER():  # bv x:var = 3
             node = VariableNode()
             node.name = ctx.getText()
 
@@ -623,30 +678,6 @@ class AstVisitor(CVisitor):
 
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())
-        return node
-
-    def visitInstantiation(self, ctx: CParser.InstantiationContext):
-        if ctx.exception is not None:
-            raise Exception("syntax error")
-        node = InstantiationNode()
-        node.const = False
-        node.name = ctx.IDENTIFIER().__str__()
-        node.varType = self.visitType(ctx.type_())
-        #self.symbol_table.st_print()
-        # (Checking for) Redeclaration or redefinition of an existing variable
-        self.cur_symbol_table.add_symbol(str(node.name), str(node.varType))
-        return node
-
-    def visitConst_instantiation(self, ctx: CParser.Const_instantiationContext):
-        if ctx.exception is not None:
-            raise Exception("syntax error")
-        node = InstantiationNode()
-        node.const = True
-        node.name = ctx.IDENTIFIER().__str__()
-        node.varType = self.visitType(ctx.type_())
-        # (Checking for) Redeclaration or redefinition of an existing variable
-        self.cur_symbol_table.add_symbol(str(node.name), "const" + str(node.varType))
-
         return node
 
     def visitType(self, ctx: CParser.TypeContext):

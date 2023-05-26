@@ -8,12 +8,8 @@ include
     : INCLUDE STDIO;
 
 global_var
-    : comment? expression_statement SEMICOLON
-    | comment? array_initialisation SEMICOLON
-    | comment? jump_statement SEMICOLON
-    | comment? compound_statement
-    | comment? block_scope
-    | comment;
+    : instantiationExpression SEMICOLON
+    | array_initialisation SEMICOLON;
 
 function
     : function_declaration block_scope;
@@ -63,7 +59,8 @@ compound_statement
 expression_statement
     : assignment
     | declaration
-    | logicexpression;
+    | logicexpression
+    | instantiationExpression;
 
 jump_statement
     : break
@@ -100,8 +97,6 @@ for_condition
 update_expression
     : ((IDENTIFIER | pointer) EQUALS)? logicexpression;
 //    | ((IDENTIFIER | pointer) EQUALS)? logicexpression COMMA update_expression;
-//
-
 
 comment
     : SINGLECOMMENT
@@ -109,23 +104,25 @@ comment
 
 assignment
     : declaration EQUALS logicexpression
-    | const_instantiation EQUALS logicexpression
     | rvalue_assignment;
 
 rvalue_assignment
     : logicexpression EQUALS logicexpression;
 
 declaration
-    : instantiation
-    | pointer
+    : pointer
     | array
     | IDENTIFIER;
 
-instantiation
-    : type IDENTIFIER;
+instantiationExpression
+    : type not_const (COMMA not_const)*
+    | CONST type const (COMMA const)*;
 
-const_instantiation
-    : CONST type IDENTIFIER;
+not_const
+    : IDENTIFIER (EQUALS logicexpression)?;
+
+const
+    : IDENTIFIER EQUALS logicexpression;
 
 type
     : (INT | CHAR | FLOAT | BOOL) STAR*;
@@ -143,9 +140,9 @@ factor
     : element (factorops (element | factor))?;
 
 element
-    : IDENTIFIER | array | '(' logicexpression ')'
-    | (IDENTIFIER | array) SPECIALUNARY
-    | SPECIALUNARY (IDENTIFIER | array)
+    : IDENTIFIER | array | LBRACKET logicexpression RBRACKET
+    | (IDENTIFIER | array| LBRACKET pointer RBRACKET) SPECIALUNARY
+    | SPECIALUNARY (IDENTIFIER | array | LBRACKET pointer RBRACKET)
     | pointer
     | literal
     | function_call
@@ -173,7 +170,7 @@ unaryops
     : MINUS | PLUS | EXCLAMAION | AMPERSAND;
 
 typecast
-    : '(' (INT | CHAR | FLOAT | BOOL) ')';
+    : LBRACKET (INT | CHAR | FLOAT | BOOL) RBRACKET;
 
 pointer
     : STAR IDENTIFIER
@@ -213,6 +210,7 @@ RCURLY: '}';
 LSQUARE: '[';
 RSQUARE: ']';
 COMMA: ',';
+DOT: '.';
 
 PLUS : '+';
 MINUS : '-';
@@ -238,11 +236,11 @@ STDIO : '<stdio.h>';
 IDENTIFIER
     : ('_' | [a-zA-Z]) ('_' | [0-9] | [a-zA-Z])*;
 
-FLOATLITERAL
-    : DIGIT+ ((',' | '.') DIGIT+)+;
-
 INTLITERAL
     : DIGIT+;
+
+FLOATLITERAL
+    : DIGIT+ (COMMA | DOT) DIGIT+;
 
 CHARLITERAL
     : '\'' '\\'? . '\'';
