@@ -256,6 +256,7 @@ class ArrayInstantiationNode(Node):
     name = ""
     size = None
     varType = ""
+    const = ""
 
 
 class ArrayNode(Node):

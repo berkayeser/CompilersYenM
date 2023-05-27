@@ -13,7 +13,9 @@ class SymbolTable:
         self.parentScope: SymbolTable = None
         self.name: list[int] = name
 
+
     def add_symbol(self, name, type, function:bool = False):
+        # Function=True -> function parameter
         if name in self.scope1 and not function:
             if self.get_symbol(name)['type'] == type:
                 # self.st_print()
@@ -45,16 +47,20 @@ class SymbolTable:
         if name not in self.scope1:
             # instantieren in huidige scope
             symbol = self.get_symbol(name, "undef")
+            # Als je in een diepere functie bent, wordt dit symbool ineens toegevoegd aan de huidige scope
             self.add_symbol(name, symbol['type'])
         self.scope1[name]['value'] = value
 
     def get_symbol(self, name, errortype=None, input_scope: list[int] = None):
         scope = self
-        if input_scope is not None:
+        if input_scope is not None and len(input_scope) > 0:
             input_scope = input_scope.copy()
             input_scope.pop(0)
             for s in input_scope:
+                if s > len(scope.subScopes):
+                    print("errorSy")
                 scope = scope.subScopes[s]
+
         while scope is not None:
             if name in scope.scope1:
                 return scope.scope1[name]

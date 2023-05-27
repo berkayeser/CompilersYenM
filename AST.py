@@ -5,7 +5,7 @@ import networkx.drawing.nx_pydot as nxd
 import pydot
 import matplotlib.pyplot as plt
 import graphviz
-
+import sys
 
 class AST:
     root = None
@@ -20,9 +20,12 @@ class AST:
         def visit(node, parent=None):
             skip_flag = False
             # Assign a unique ID to the node gebaseerd op zijn memory address
-            id = str(hash(node))
+            id = str(hash(node) % ((sys.maxsize + 1) * 2))
             # Label the node with its class name
-            label = node.getASTvalue()
+            if isinstance(node, str):
+                label = node
+            else:
+                label = node.getASTvalue()
 
             if label == "'\x00'":
                 label = "/0"
@@ -33,6 +36,11 @@ class AST:
             elif label == "line" or label == "special_unary": # Geen 'line' nodes in AST
                 skip_flag = True
                 id = parent
+
+            """label = label.replace("\"", "s", -1)
+            label = label.replace("\\", "b", -1)
+            label = label.replace('"', "b", -1)
+            label = label.replace("\\", "b", -1)"""
 
             if not skip_flag:
                 dot.node(id, label)
@@ -45,10 +53,11 @@ class AST:
                 for arg in node.arguments:
                     visit(arg.value, id)
 
-            # Recursively visit each child node
-            for child in node.children:
-                # Node child is another AST node, visit it
-                visit(child, id)
+            if not isinstance(node,str):
+                # Recursively visit each child node
+                for child in node.children:
+                    # Node child is another AST node, visit it
+                    visit(child, id)
 
         # Call the visit function to traverse the entire AST
         visit(node)

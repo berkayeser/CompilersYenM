@@ -9,7 +9,7 @@ class AstVisitor(CVisitor):
     def __init__(self):
         self.symbol_table: SymbolTable = SymbolTable([0])
         self.cur_symbol_table: SymbolTable = self.symbol_table
-        self.functions: list[FuncDeclareNode] = []
+        self.functions: list[(FuncDeclareNode,bool)] = [] # de bool om aan te duiden of het al gedefinieerd is
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -46,29 +46,44 @@ class AstVisitor(CVisitor):
         # is a list
         return nodes
 
+    def semantic_rede_check(self, node: InstantiationNode, isConst: bool):
+        # (Checking for) Redeclaration or redefinition of an existing variable
+        # Also adds the node to the symbol table if everything checks out
+
+        if isConst:
+            self.cur_symbol_table.add_symbol(str(node.name), "const" + str(node.varType))
+        else:
+            self.cur_symbol_table.add_symbol(str(node.name), str(node.varType))
+
+
     def visitInstantiationExpression(self, ctx: CParser.InstantiationExpressionContext):
         nodes = []
         isConst = False
         if ctx.CONST():
             isConst = True
-        firstNode = InstantiationNode()
-        firstNode.const = isConst
-        firstNode.varType = ctx.type_().getText()
+
         if isConst:
             temp = self.visitConst(ctx.const(0))
         else:
             temp = self.visitNot_const(ctx.not_const(0))
+
+        firstNode = InstantiationNode()
+        firstNode.const = isConst
+        firstNode.varType = ctx.type_().getText()
         firstNode.name = temp[0]
+        self.semantic_rede_check(firstNode, isConst)
 
         if temp[1]:
             assignmentNode = AssignmentNode()
+            assignmentNode.scope = self.cur_symbol_table.name
             assignmentNode.left = firstNode
             assignmentNode.right = temp[1]
             assignmentNode.children = [firstNode, temp[1]]
             nodes.append(assignmentNode)
+            self.semantic_assignment_check(assignmentNode)
         else:
             nodes.append(firstNode)
-        for i in range(len(ctx.COMMA())):
+        for i in range(1,len(ctx.COMMA())+1):
             newNode = InstantiationNode()
             newNode.const = isConst
             newNode.varType = ctx.type_().getText()
@@ -77,15 +92,21 @@ class AstVisitor(CVisitor):
             else:
                 temp = self.visitNot_const(ctx.not_const(i))
             newNode.name = temp[0]
+            self.semantic_rede_check(newNode, isConst)
 
             if temp[1]:
                 assignmentNode = AssignmentNode()
+                assignmentNode.scope = self.cur_symbol_table.name
                 assignmentNode.left = newNode
                 assignmentNode.right = temp[1]
                 assignmentNode.children = [newNode, temp[1]]
                 nodes.append(assignmentNode)
+
+                self.semantic_assignment_check(assignmentNode)
             else:
                 nodes.append(newNode)
+
+
         return nodes
 
     def visitNot_const(self, ctx: CParser.Not_constContext):
@@ -109,11 +130,12 @@ class AstVisitor(CVisitor):
             list_args.append(new_arg)
 
         return list_args
+
     def semantic_function_check(self, node: FuncDeclareNode):
         nrt = node.returnType
         for f in self.functions:
-            frt = f.returnType
-            if f.name == node.name:
+            frt = f[0].returnType
+            if f[0].name == node.name:
                 # 2 functies met dezelfde naam -> alle attributen moeten hetzelfde zijn
 
                 # 1) Returntype checken
@@ -122,7 +144,7 @@ class AstVisitor(CVisitor):
                                     f"declared '{frt}' return type, but previously declared '{nrt}' return type.")
 
                 # 2) Arguments checken
-                fa: list[str] = self.append_arguments(f.arguments)
+                fa: list[str] = self.append_arguments(f[0].arguments)
                 na: list[str] = self.append_arguments(node.arguments)
                 fal = len(fa)
 
@@ -165,7 +187,8 @@ class AstVisitor(CVisitor):
 
         self.semantic_function_check(node)
         # Toevoegen aan functie lijst
-        self.functions.append(node)
+        t: tuple[FuncDeclareNode, bool] = (node,False)
+        self.functions.append(t)
         return node
 
     def visitArgument_declaration(self, ctx: CParser.Argument_declarationContext):
@@ -180,7 +203,7 @@ class AstVisitor(CVisitor):
         node.varType = ctx.type_().getText()
         node.name = ctx.IDENTIFIER().getText()
 
-        self.cur_symbol_table.add_symbol(node.name, node.varType, True)
+        self.cur_symbol_table.add_symbol(node.name, node.varType, False)
         self.cur_symbol_table.add_symbol_value(node.name, 0)
 
         if ctx.COMMA():
@@ -252,13 +275,25 @@ class AstVisitor(CVisitor):
             if rnv != rt:
                 raise Exception(f"Semantic error: Function declared return type '{rt}' but returns type '{rnv}'.")
 
+    def semantic_function_redef_check(self, f_name:str):
+        for i in range(0,len(self.functions)):
+            if self.functions[i][0].name == f_name:
+                if self.functions[i][1] == False:
+                    self.functions[i] = (self.functions[i][0],True)
+                else:
+                    fa: list[str] = self.append_arguments(self.functions[i][0].arguments)
+
+                    raise Exception(f"Semantic error: redefinition of the function '{f_name}' with parameters {fa}")
+
+
+
     def visitFunction(self, ctx: CParser.FunctionContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = FunctionNode()
         node.declaration = self.visitFunction_declaration(ctx.function_declaration())
-
+        self.semantic_function_redef_check(node.declaration.name)
         node.block = self.visitBlock_scope(ctx.block_scope())
 
         self.semantic_return_check(node)
@@ -333,8 +368,11 @@ class AstVisitor(CVisitor):
 
         node = ArrayInstantiationNode()
         node.name = ctx.IDENTIFIER().getText()
-        node.size = int(ctx.INTLITERAL())
+        node.size = int(ctx.INTLITERAL().getText())
         node.varType = ctx.type_().getText()
+
+        # Add to Symbol Table
+        self.semantic_rede_check(node, False)
         return node
 
     def visitArray(self, ctx: CParser.ArrayContext):
@@ -391,10 +429,11 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
 
         node = ArgumentNode()
-        if ctx.STRINGLITERAL():
-            node.value = ctx.STRINGLITERAL().getText()
-        else:
+        if ctx.logicexpression():
             node.value = self.visitLogicexpression(ctx.logicexpression())
+        else:
+            node.value = ctx.STRINGLITERAL().getText()
+
         if ctx.COMMA():
             allArgs = [node]
             arguments = self.visitArgument(ctx.argument())
@@ -498,10 +537,11 @@ class AstVisitor(CVisitor):
         temp = None
 
         # changed assignment to assignment or instantiationExpression
-        if ctx.instantiationExpression():
-            temp = self.visitInstantiationExpression(ctx.instantiationExpression())[0]
-        else:
+        if ctx.assignment():
             temp = self.visitAssignment(ctx.assignment(), line_nr)
+        else:
+            temp = self.visitInstantiationExpression(ctx.instantiationExpression())[0]
+
 
         condition = [temp, self.visitLogicexpression(ctx.logicexpression()),
                      self.visitUpdate_expression(ctx.update_expression())]
@@ -548,40 +588,26 @@ class AstVisitor(CVisitor):
         node.text = ctx.getText()
         return node
 
-    def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr: int = -1):
-        if ctx.exception is not None:
-            raise Exception("syntax error")
-        if ctx.rvalue_assignment():
-            raise Exception(f"cannot assign rvalue {ctx.rvalue_assignment().logicexpression(0).getText()}")
-
-        node = AssignmentNode()
-        if ctx.declaration():
-            node.left = self.visitDeclaration(ctx.declaration(), line_nr)
-
-        # removed const instantiation
-
-        node.right = self.visitLogicexpression(ctx.logicexpression())
-        node.children = [node.left, node.right]
-        node.scope = self.cur_symbol_table.name
-        #print(str(node)+str(node.scope))
-
+    def semantic_assignment_check(self, node: AssignmentNode):
 
         # Adding variable values to the symbol table
         if node.right.type == 'literal':
             if node.left.type in ['instantiation', 'variable']:
                 # Als de waarde van dit symbool voorheen al ingevuld is, duiden we dit aan
-                #if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
+                # if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
                 if self.cur_symbol_table.symbol_used_current(node.left.name):
                     self.cur_symbol_table.symbol_used_twice(node.left.name)
                 else:
-                    self.cur_symbol_table.add_symbol_value(node.left.name, node.right.value)
+                    n:str = node.left.name
+                    if not isinstance(n,str):
+                        n = n.getText()
+                    self.cur_symbol_table.add_symbol_value(n, node.right.value)
                     # Scope toevoegen
-                    #node.scope = self.cur_symbol_table.name
+                    # node.scope = self.cur_symbol_table.name
                     """print("printing astvis")
                     print(node.scope)
                     print(node)
                     print()"""
-
 
             # else:  bv. nodelefttype = unary bv "*ptr = 2;"
 
@@ -618,6 +644,8 @@ class AstVisitor(CVisitor):
             elif node.right.operation == "&":
                 # BV int b = 4; int** m = &b;
                 nlvn = node.left.name
+                if not isinstance(nlvn, str):
+                    nlvn = nlvn.getText()
                 nlvt = self.cur_symbol_table.get_symbol(nlvn)['type']
 
                 if nlvt[-2:] == "**":
@@ -664,7 +692,39 @@ class AstVisitor(CVisitor):
             if nodeLt != nodeRt:
                 print(
                     f"Syntax Error, Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+
+    def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr: int = -1):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+        if ctx.rvalue_assignment():
+            raise Exception(f"cannot assign rvalue {ctx.rvalue_assignment().logicexpression(0).getText()}")
+
+        node = AssignmentNode()
+        if ctx.declaration():
+            node.left = self.visitDeclaration(ctx.declaration(), line_nr)
+
+        # removed const instantiation
+
+        node.right = self.visitLogicexpression(ctx.logicexpression())
+        node.children = [node.left, node.right]
+        node.scope = self.cur_symbol_table.name
+
+        self.semantic_assignment_check(node)
+
         return node
+
+
+    def semantic_undef_assign_check(self, node):
+        # Use of an undefined variable
+        type1 = self.cur_symbol_table.get_symbol(str(node.name), "undef")['type']
+
+        # Assignment to a const variable.
+        if type1[0:5] == "const":
+            if type1[-1] == "*":
+                pass
+            else:
+                raise Exception(
+                    f"Semantic Error; Assignment to the const variable '{str(node.name)}' that has the type '{type1}'.")
 
     def visitDeclaration(self, ctx: CParser.DeclarationContext, line_nr: int = -1):
         if ctx.exception is not None:
@@ -672,21 +732,14 @@ class AstVisitor(CVisitor):
         node = None
 
         # removed instantiation
+        if ctx.array():
+            node = self.visitArray(ctx.array())
+            self.semantic_undef_assign_check(node)
 
-        if ctx.IDENTIFIER():  # bv x:var = 3
+        elif ctx.IDENTIFIER():  # bv x:var = 3
             node = VariableNode()
             node.name = ctx.getText()
-
-            # Use of an undefined variable
-            type1 = self.cur_symbol_table.get_symbol(str(node.name), "undef")['type']
-
-            # Assignment to a const variable.
-            if type1[0:5] == "const":
-                if type1[-1] == "*":
-                    pass
-                else:
-                    raise Exception(
-                        f"Semantic Error; Assignment to the const variable '{str(node.name)}' that has the type '{type1}'.")
+            self.semantic_undef_assign_check(node)
 
         elif ctx.pointer():
             node = self.visitPointer(ctx.pointer())

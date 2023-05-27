@@ -26,8 +26,8 @@ class AstOptimizer:
         # The printf node, will have no children
         if node.type == "printf":
             for i in range(0,len(node.arguments)):
-                avt = node.arguments[i].value.type
-                if avt == "variable":
+                av = node.arguments[i].value
+                if not isinstance(av,str) and av.type == "variable":
                     avn = node.arguments[i].value.name
                     s = node.scope
                     avs = self.st.get_symbol(avn, None, s)
