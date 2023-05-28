@@ -17,7 +17,8 @@ class AstVisitor(CVisitor):
         ast = AST()
         node = RunNode()
         if ctx.include():
-            #self.visitInclude(ctx.include())
+            self.visitInclude(ctx.include())
+            #print(ctx.include().getText())
             node.include = True
         for child in ctx.children:
             if isinstance(child, CParser.FunctionContext):
@@ -37,8 +38,6 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
-        if ctx.STDIO():
-            print(1)
 
 
     def visitGlobal_var(self, ctx: CParser.Global_varContext):
@@ -288,6 +287,17 @@ class AstVisitor(CVisitor):
                 raise Exception(f"Semantic error: Function declared return type '{rt}' but returns type '{rnv}'.")
 
     def semantic_function_redef_check(self, f_name:str):
+        # Eerst checken da we geen functies definieren in int main()
+        flag: bool = False
+        for f in self.functions:
+            if f[0].name == "main":
+                flag = True
+
+        name: str = f_name
+        if self.cur_symbol_table.name == [0] and name != "main" and flag:
+            raise Exception(f"Error: Definition of '{name}' in local scope.")
+
+        # daarna functies redef checken
         for i in range(0,len(self.functions)):
             if self.functions[i][0].name == f_name:
                 if self.functions[i][1] == False:
@@ -303,22 +313,11 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
-
-
         node = FunctionNode()
         node.declaration = self.visitFunction_declaration(ctx.function_declaration())
 
-
-        flag: bool = False
-        for f in self.functions:
-            if f[0].name == "main":
-                flag = True
-
-        name:str =node.declaration.name
-        if self.cur_symbol_table.name == [0] and name != "main" and flag:
-            raise Exception(f"Error: Definition of '{name}' in local scope.")
-
         self.semantic_function_redef_check(node.declaration.name)
+
         node.block = self.visitBlock_scope(ctx.block_scope())
 
         self.semantic_return_check(node)
@@ -326,7 +325,7 @@ class AstVisitor(CVisitor):
         node.children = [node.declaration, node.block]
         return node
 
-    def visitBlock_scope(self, ctx: CParser.Block_scopeContext):
+    def visitBlock_scope(self, ctx: CParser.Block_scopeContext, loop: bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -335,7 +334,7 @@ class AstVisitor(CVisitor):
         statements = ctx.statement()
         self.cur_symbol_table.open_scope(self)
         for statement in statements:
-            temp = self.visitStatement(statement)
+            temp = self.visitStatement(statement, loop)
             if isinstance(temp, tuple):
                 for t in temp:
                     nodes.append(t)
@@ -348,7 +347,7 @@ class AstVisitor(CVisitor):
         self.cur_symbol_table.close_scope(self)
         return node
 
-    def visitStatement(self, ctx: CParser.StatementContext):
+    def visitStatement(self, ctx: CParser.StatementContext,loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -364,10 +363,10 @@ class AstVisitor(CVisitor):
             node.children.append(node.statement)
         elif ctx.jump_statement():
             node = StatementNode()
-            node.statement = self.visitJump_statement(ctx.jump_statement())
+            node.statement = self.visitJump_statement(ctx.jump_statement(), loop)
             node.children.append(node.statement)
         elif ctx.compound_statement():
-            node = self.visitCompound_statement(ctx.compound_statement(), line_nr)
+            node = self.visitCompound_statement(ctx.compound_statement(), line_nr, loop)
             if isinstance(node, tuple):
                 whileNode = node[1]
                 node = node[0]
@@ -417,6 +416,49 @@ class AstVisitor(CVisitor):
                     f"Semantic Error; Can't access type '{s['type']}' with index '{node.index.value}'; '{node.name}' is not an array.")
         return node
 
+    def compare_arguments(self, f_args: list[FunctionArgNode], call_args: list[ArgumentNode]) -> list[list]:
+        f_args1:list = []
+        call_args1:list = []
+        for fa in f_args:
+            f_args1.append(fa.varType)
+
+        for ca in call_args:
+            if ca.value.type == "unary":
+                type = self.cur_symbol_table.get_symbol(ca.value.variable.name)["type"]
+                call_args1.append(type + "*")
+            elif ca.value.type == "variable":
+                call_args1.append(self.cur_symbol_table.get_symbol(ca.value.name)["type"])
+
+            else:
+                call_args1.append(ca.value.literalType)
+
+        return [f_args1, call_args1]
+
+    def semantic_call_check(self, node:CallNode):
+        # First check for calling noexistent function
+        found = 0  # 0: not found, 1 : found but undeclared, 2 : ok
+        for f in self.functions:
+            if f[0].name == node.name:
+                if f[1]:
+                    function = f[0]
+                    found = 2
+                else:
+                    found = max(found, 1)
+        if found == 1:
+            raise Exception(f"Error: Calling undefined function '{node.name}'.")
+        elif found == 0:
+            raise Exception(f"Error: Calling undeclared function '{node.name}'.")
+
+        # Second check for wrong function paremeters
+
+        f_args = function.arguments
+        call_args = node.arguments
+
+        s = self.compare_arguments(f_args,call_args)
+        if s[0] != s[1]:
+            raise Exception(f"Function call for '{node.name}' expected parameters {s[0]}; but got {s[1]}.")
+
+
     def visitFunction_call(self, ctx: CParser.Function_callContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -433,6 +475,9 @@ class AstVisitor(CVisitor):
         if ctx.argument():
             node.arguments = self.visitArgument(ctx.argument())
             node.children = node.arguments
+
+        self.semantic_call_check(node)
+
         return node
 
     def visitScanf(self, ctx: CParser.ScanfContext):
@@ -445,6 +490,66 @@ class AstVisitor(CVisitor):
             node.arguments = self.visitArgument(ctx.argument())
         return node
 
+    def parse_string(self, string:str) -> list[str]:
+        string.replace(" ", "")
+        if string[-2:] == "\n":
+            string = string[:-2]
+
+        list: list = []
+        for i in range(0, len(string)):
+            if string[i] == "%":
+                list.append(string[i:i+2])
+
+        return list
+
+    def semantic_printf_check(self, node:PrintfNode):
+        if len(node.arguments) == 0:
+            return
+        s = self.parse_string(node.string)
+
+        # Parse node.arguments
+        na: list = []
+        for a in node.arguments:
+            if isinstance(a.value, str):
+                na.append("string")
+            elif a.value.type == "literal":
+                na.append(a.value.literalType)
+            else:
+                return
+
+        len_s = len(s)
+        if len_s != len(node.arguments):
+            raise Exception(f"Error: Incompatible arguments:'{na}', for Printf with '{s}'.")
+
+        for i in range (0,len_s):
+            nai = na[i]
+            if s[i] == "%d":
+                # argument moet int zijn
+                if nai != "int":
+                    raise Exception(f"Error: Incompatible arguments:{na}, for Printf with:{s} (should be int).")
+
+            elif s[i] == "%s":
+                # argument moet string zijn
+                if nai != "string":
+                    raise Exception(f"Error: Incompatible arguments:{na}, for Printf with:{s} (should be string).")
+
+            elif s[i] == "%c":
+                # argument moet char zijn
+                if nai != "char":
+                    raise Exception(f"Error: Incompatible arguments:{na}, for Printf with:{s} (should be char).")
+
+            elif s[i] == "%f":
+                # argument moet float zijn
+                if nai != "float":
+                    if nai == "int":
+                        print((f"Warning: Incompatible arguments:{na}, for Printf with:{s} (should be float)."))
+                    else:
+                        raise Exception(f"Error: Incompatible arguments:{na}, for Printf with:{s} (should be float).")
+
+            else:
+                print(s[i])
+
+
     def visitPrintf(self, ctx: CParser.PrintfContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -455,6 +560,8 @@ class AstVisitor(CVisitor):
 
         if ctx.argument():
             node.arguments = self.visitArgument(ctx.argument())
+
+        self.semantic_printf_check(node)
         return node
 
     def visitArgument(self, ctx: CParser.ArgumentContext):
@@ -475,13 +582,17 @@ class AstVisitor(CVisitor):
             return allArgs
         return [node]
 
-    def visitJump_statement(self, ctx: CParser.Jump_statementContext):
+    def visitJump_statement(self, ctx: CParser.Jump_statementContext, loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         if ctx.break_():
+            if not loop:
+                raise Exception(f"Error: can't 'break' when not in loop.")
             return BreakNode()
         elif ctx.continue_():
+            if not loop:
+                raise Exception(f"Error: can't 'continue' when not in loop.")
             return ContinueNode()
         elif ctx.return_():
             node = ReturnNode()
@@ -492,13 +603,13 @@ class AstVisitor(CVisitor):
             node.scope = self.cur_symbol_table.name
             return node
 
-    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1):
+    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1, loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = None
         if ctx.if_():
-            node = self.visitIf(ctx.if_())
+            node = self.visitIf(ctx.if_(), loop)
         elif ctx.while_():
             node = self.visitWhile(ctx.while_())
         elif ctx.for_():
@@ -509,28 +620,28 @@ class AstVisitor(CVisitor):
 
         return node
 
-    def visitIf(self, ctx: CParser.IfContext):
+    def visitIf(self, ctx: CParser.IfContext, loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = IfNode()
         node.condition = self.visitCondition(ctx.condition())
-        node.block = self.visitBlock_scope(ctx.block_scope())
+        node.block = self.visitBlock_scope(ctx.block_scope(), loop)
         node.children = [node.condition, node.block]
         if ctx.else_():
-            node.elseNode = self.visitElse(ctx.else_())
+            node.elseNode = self.visitElse(ctx.else_(), loop)
             node.children.append(node.elseNode)
         return node
 
     def visitCondition(self, ctx: CParser.ConditionContext):
         return self.visitLogicexpression(ctx.logicexpression())
 
-    def visitElse(self, ctx: CParser.ElseContext):
+    def visitElse(self, ctx: CParser.ElseContext, loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         node = ElseNode()
-        node.block = self.visitBlock_scope(ctx.block_scope())
+        node.block = self.visitBlock_scope(ctx.block_scope(), loop)
         node.children = [node.block]
         return node
 
@@ -540,7 +651,8 @@ class AstVisitor(CVisitor):
 
         node = WhileNode()
         node.condition = self.visitCondition(ctx.condition())
-        node.block = self.visitBlock_scope(ctx.block_scope())
+        loop: bool = True
+        node.block = self.visitBlock_scope(ctx.block_scope(), loop)
         node.children = [node.condition, node.block]
 
         return node
@@ -557,7 +669,8 @@ class AstVisitor(CVisitor):
         Statement.statement = condition[0]
         Statement.children = [Statement.statement]
         While.condition = condition[1]
-        While.block = self.visitBlock_scope(ctx.block_scope())
+        loop: bool = True
+        While.block = self.visitBlock_scope(ctx.block_scope(), loop)
         While.block.children.insert(0, condition[2])
         While.children = [While.condition, While.block]
 
@@ -730,7 +843,7 @@ class AstVisitor(CVisitor):
 
             if nodeLt != nodeRt:
                 print(
-                    f"Syntax Error, Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
+                    f"Syntax Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
 
     def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr: int = -1):
         if ctx.exception is not None:
@@ -885,7 +998,7 @@ class AstVisitor(CVisitor):
 
         if (nlt == "int" and nrt == "float") or (nlt == "float" and nrt == "int"):
             return
-        if nlt != nrt:
+        if nlt != nrt or nlt[-1] == "*" or nrt[-1] == "*":
             raise Exception(f"Semantic error: Operation of incompatible types; '{nlt}' {node.operation} '{nrt}'")
 
 
