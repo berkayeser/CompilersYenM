@@ -17,6 +17,7 @@ class AstVisitor(CVisitor):
         ast = AST()
         node = RunNode()
         if ctx.include():
+            #self.visitInclude(ctx.include())
             node.include = True
         for child in ctx.children:
             if isinstance(child, CParser.FunctionContext):
@@ -31,6 +32,14 @@ class AstVisitor(CVisitor):
                 node.children.append(self.visitComment(child))
         ast.root = node
         return ast
+
+    def visitInclude(self, ctx:CParser.IncludeContext):
+        if ctx.exception is not None:
+            raise Exception("syntax error")
+
+        if ctx.STDIO():
+            print(1)
+
 
     def visitGlobal_var(self, ctx: CParser.Global_varContext):
         if ctx.exception is not None:
@@ -294,8 +303,21 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
+
+
         node = FunctionNode()
         node.declaration = self.visitFunction_declaration(ctx.function_declaration())
+
+
+        flag: bool = False
+        for f in self.functions:
+            if f[0].name == "main":
+                flag = True
+
+        name:str =node.declaration.name
+        if self.cur_symbol_table.name == [0] and name != "main" and flag:
+            raise Exception(f"Error: Definition of '{name}' in local scope.")
+
         self.semantic_function_redef_check(node.declaration.name)
         node.block = self.visitBlock_scope(ctx.block_scope())
 
@@ -367,7 +389,6 @@ class AstVisitor(CVisitor):
 
     def visitArray_initialisation(self, ctx: CParser.Array_initialisationContext):
         if ctx.exception is not None:
-            print(ctx.exception)
             raise Exception("syntax error; Invalid index into Array.")
 
         node = ArrayInstantiationNode()
@@ -616,10 +637,6 @@ class AstVisitor(CVisitor):
                     self.cur_symbol_table.add_symbol_value(n, node.right.value)
                     # Scope toevoegen
                     # node.scope = self.cur_symbol_table.name
-                    """print("printing astvis")
-                    print(node.scope)
-                    print(node)
-                    print()"""
 
             # else:  bv. nodelefttype = unary bv "*ptr = 2;"
 
@@ -679,6 +696,16 @@ class AstVisitor(CVisitor):
                         f"Semantic Error; Can't assign address of '{nrvn}' of type '{nrvt}' to '{nlvn}' of Incorrect type '{nlvt}'.")
 
             # else: anders perfect in orde
+
+        # Check for wrong assignment, bv: float f(); int e = f()
+        if node.right.type == "call":
+            nlt:str = self.cur_symbol_table.get_symbol(node.left.name)['type']
+            for f in self.functions:
+                if f[0].name == node.right.name:
+                    frt = f[0].returnType #function return value type
+
+            if nlt != frt:
+                raise Exception(f"Semantic error: Operation of incompatible types; '{nlt}' get assigned to function returning :'{frt}'")
 
         # Assignments of incompatible types "inta=1;floatb=a;" OF "inta;floatb;a=b;"
         # bv "int a; float b; a=b;"
@@ -833,19 +860,33 @@ class AstVisitor(CVisitor):
         node.children = [node.left, node.right]
         return node
 
+
+    # Check for incompatible types in Terms
     def semantic_types_check(self, node: TermNode):
-        if node.left.type == "variable" or node.right.type == "variable":
-            return
+
         if node.left.type == "factor" or node.right.type == "factor":
             return
         if node.left.type == "call" or node.right.type == "call":
             return
-        nlt = node.left.literalType
-        nrt = node.right.literalType
+
+        if node.left.type == "variable":
+            nlt:str = self.cur_symbol_table.get_symbol(node.left.name)["type"]
+        elif node.left.type == "unary":
+            nlt = "unary"
+        else:
+            nlt = node.left.literalType
+
+        if node.right.type == "variable":
+            nrt:str = self.cur_symbol_table.get_symbol(node.right.name)["type"]
+        elif node.right.type == "unary":
+            nrt = "unary"
+        else:
+            nrt = node.right.literalType
+
         if (nlt == "int" and nrt == "float") or (nlt == "float" and nrt == "int"):
             return
         if nlt != nrt:
-            raise Exception(f"Semantic error: Operation on incompatible types; '{nlt}' {node.operation} '{nrt}'")
+            raise Exception(f"Semantic error: Operation of incompatible types; '{nlt}' {node.operation} '{nrt}'")
 
 
     def visitTerm(self, ctx: CParser.TermContext):
@@ -899,6 +940,9 @@ class AstVisitor(CVisitor):
             node = UnaryNode()
             node.operation = ctx.unaryops().getText()
             node.variable = self.visitElement(ctx.element())
+            if node.variable.type == "literal" and node.operation == "&":
+
+                raise Exception(f"Error: Dereference with '{node.operation}' has wrong mismatched type of '{node.variable.literalType}'.")
             node.children = [node.variable]
 
         elif ctx.literal():
