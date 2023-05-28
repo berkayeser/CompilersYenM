@@ -46,14 +46,17 @@ class AstVisitor(CVisitor):
         # is a list
         return nodes
 
-    def semantic_rede_check(self, node: InstantiationNode, isConst: bool):
+    def semantic_rede_check(self, node: InstantiationNode, isConst: bool, is_array: bool = False):
         # (Checking for) Redeclaration or redefinition of an existing variable
         # Also adds the node to the symbol table if everything checks out
 
         if isConst:
             self.cur_symbol_table.add_symbol(str(node.name), "const" + str(node.varType))
         else:
-            self.cur_symbol_table.add_symbol(str(node.name), str(node.varType))
+            if is_array:
+                self.cur_symbol_table.add_symbol(str(node.name), "array"+str(node.varType))
+            else:
+                self.cur_symbol_table.add_symbol(str(node.name), str(node.varType))
 
 
     def visitInstantiationExpression(self, ctx: CParser.InstantiationExpressionContext):
@@ -364,7 +367,8 @@ class AstVisitor(CVisitor):
 
     def visitArray_initialisation(self, ctx: CParser.Array_initialisationContext):
         if ctx.exception is not None:
-            raise Exception("syntax error")
+            print(ctx.exception)
+            raise Exception("syntax error; Invalid index into Array.")
 
         node = ArrayInstantiationNode()
         node.name = ctx.IDENTIFIER().getText()
@@ -372,7 +376,7 @@ class AstVisitor(CVisitor):
         node.varType = ctx.type_().getText()
 
         # Add to Symbol Table
-        self.semantic_rede_check(node, False)
+        self.semantic_rede_check(node, False, True)
         return node
 
     def visitArray(self, ctx: CParser.ArrayContext):
@@ -382,6 +386,14 @@ class AstVisitor(CVisitor):
         node = ArrayNode()
         node.name = ctx.IDENTIFIER().getText()
         node.index = self.visitLogicexpression(ctx.logicexpression())
+
+        if node.index.type not in ["term","factor","call"] and node.index.literalType == "float":
+            raise Exception(f"Semantic Error; Can't access array '{node.name}' with index '{node.index.value}' of type float.")
+        else:
+            s = self.cur_symbol_table.get_symbol(node.name)
+            if s["type"][0:5] != "array":
+                raise Exception(
+                    f"Semantic Error; Can't access type '{s['type']}' with index '{node.index.value}'; '{node.name}' is not an array.")
         return node
 
     def visitFunction_call(self, ctx: CParser.Function_callContext):
@@ -769,6 +781,32 @@ class AstVisitor(CVisitor):
         node.children = [node.left, node.right]
         return node
 
+    def semantic_array_compare_check(self, node: CompareNode):
+
+        if node.left.type == "variable":
+            nln = node.left.name
+            ls = self.cur_symbol_table.get_symbol(nln)["type"]
+            lsa = ls[0:5]
+        elif node.left.type == "literal":
+            ls = node.left.literalType
+            lsa = ls
+        else:
+            return
+
+        if node.right.type == "variable":
+            nrn = node.right.name
+            rs = self.cur_symbol_table.get_symbol(nrn)["type"]
+            rsa = rs[0:5]
+        elif node.right.type == "literal":
+            rs = node.right.literalType
+            rsa = rs
+        else:
+            return
+
+
+        if lsa == "array" or rsa == "array":
+            raise Exception(f"Semantic error: Can't do comparison on type array; '{ls}' {node.operation} '{rs}'.")
+
     def visitBoolexpression(self, ctx: CParser.BoolexpressionContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -781,6 +819,7 @@ class AstVisitor(CVisitor):
             node.left = self.visitTerm(ctx.term(0))
             node.right = self.visitTerm(ctx.term(1))
             node.children = [node.left, node.right]
+            self.semantic_array_compare_check(node)
             return node
         node = LogicNode()
         node.operation = "&&"
@@ -793,6 +832,21 @@ class AstVisitor(CVisitor):
         node.right = compNode2
         node.children = [node.left, node.right]
         return node
+
+    def semantic_types_check(self, node: TermNode):
+        if node.left.type == "variable" or node.right.type == "variable":
+            return
+        if node.left.type == "factor" or node.right.type == "factor":
+            return
+        if node.left.type == "call" or node.right.type == "call":
+            return
+        nlt = node.left.literalType
+        nrt = node.right.literalType
+        if (nlt == "int" and nrt == "float") or (nlt == "float" and nrt == "int"):
+            return
+        if nlt != nrt:
+            raise Exception(f"Semantic error: Operation on incompatible types; '{nlt}' {node.operation} '{nrt}'")
+
 
     def visitTerm(self, ctx: CParser.TermContext):
         if ctx.exception is not None:
@@ -810,6 +864,9 @@ class AstVisitor(CVisitor):
             # bv ... = . + .;
             node.right = self.visitFactor(ctx.factor(1))
         node.children = [node.left, node.right]
+
+        self.semantic_types_check(node)
+
         # bv int a = 1+2; =>  node.left.value = 1      node.right.value = 2
         return node
 
