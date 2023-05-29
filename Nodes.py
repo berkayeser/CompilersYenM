@@ -17,7 +17,7 @@ class Node:
     def getASTvalue(self):
         return self.type
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         pass
 
 
@@ -25,8 +25,11 @@ class RunNode(Node):
     type = "run"
     include = False
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitRun(self)
+
+    def generateMips(self, mips):
+        return mips.visitRun(self)
 
 
 class IncludeNode(Node):
@@ -96,15 +99,21 @@ class ArgumentNode(Node):
 class BreakNode(Node):
     type = "break"
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitBreak(self)
+
+    def generateMips(self, mips):
+        return mips.visitBreak(self)
 
 
 class ContinueNode(Node):
     type = "continue"
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitContinue(self)
+
+    def generateMips(self, mips):
+        return mips.visitContinue(self)
 
 
 class ReturnNode(Node):
@@ -138,8 +147,11 @@ class PrintNode(Node):
     type = "print"
     toPrint = ""
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitPrint(self)
+
+    def generateMips(self, mips):
+        return mips.visitPrint(self)
 
 
 class BlockNode(Node):
@@ -148,9 +160,9 @@ class BlockNode(Node):
     block = None
     comment = ""
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         for i in self.children:
-            i.generateCode(llvm)
+            i.generateLlvm(llvm)
 
 
 class StatementNode(Node):
@@ -160,8 +172,11 @@ class StatementNode(Node):
 
 
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitLine(self)
+
+    def generateMips(self, mips):
+        return mips.visitLine(self)
 
 
 class IfNode(Node):
@@ -172,8 +187,11 @@ class IfNode(Node):
     elseNode = None
     comment = None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitIf(self)
+
+    def generateMips(self, mips):
+        return mips.visitIf(self)
 
 
 class ElseNode(Node):
@@ -181,8 +199,11 @@ class ElseNode(Node):
     # all code inside
     block = None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitElse(self)
+
+    def generateMips(self, mips):
+        return mips.visitElse(self)
 
 
 class WhileNode(Node):
@@ -191,8 +212,11 @@ class WhileNode(Node):
     block = None
     comment = None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitWhile(self)
+
+    def generateMips(self, mips):
+        return mips.visitWhile(self)
 
 
 class ExpressionStatementNode(Node):
@@ -202,8 +226,11 @@ class ExpressionStatementNode(Node):
     def getASTvalue(self):
         return self.instruction
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitExpressionStatement(self)
+
+    def generateMips(self, mips):
+        return mips.visitExpressionStatement(self)
 
 
 class CommentNode(Node):
@@ -213,8 +240,11 @@ class CommentNode(Node):
     def getASTvalue(self):
         return self.text
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitComment(self)
+
+    def generateMips(self, mips):
+        return mips.visitComment(self)
 
 
 class AssignmentNode(Node):
@@ -223,8 +253,11 @@ class AssignmentNode(Node):
     right = None
     scope: list[int] = []
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitAssignment(self)
+
+    def generateMips(self, mips):
+        return mips.visitAssignment(self)
 
 
 class InstantiationNode(Node):
@@ -236,8 +269,11 @@ class InstantiationNode(Node):
     def getASTvalue(self):
         return str(self.name)
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitInstantiation(self)
+
+    def generateMips(self, mips):
+        return mips.visitInstantiation(self)
 
 
 class VariableNode(Node):
@@ -247,8 +283,11 @@ class VariableNode(Node):
     def getASTvalue(self):
         return str(self.name)
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitVariable(self)
+
+    def generateMips(self, mips):
+        return mips.visitVariable(self)
 
 
 class ArrayInstantiationNode(Node):
@@ -285,8 +324,11 @@ class LogicNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitLogic(self)
+
+    def generateMips(self, mips):
+        return mips.visitLogic(self)
 
 
 class CompareNode(Node):
@@ -316,8 +358,11 @@ class CompareNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitCompare(self)
+
+    def generateMips(self, mips):
+        return mips.visitCompare(self)
 
 
 class TermNode(Node):
@@ -353,8 +398,11 @@ class TermNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitTerm(self)
+
+    def generateMips(self, mips):
+        return mips.visitTerm(self)
 
 
 class FactorNode(Node):
@@ -397,8 +445,11 @@ class FactorNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitFactor(self)
+
+    def generateMips(self, mips):
+        return mips.visitFactor(self)
 
 
 class TypeCastNode(Node):
@@ -406,8 +457,11 @@ class TypeCastNode(Node):
     castTo = ""
     variable = None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitTypeCast(self)
+
+    def generateMips(self, mips):
+        return mips.visitTypeCast(self)
 
 
 class UnaryNode(Node):
@@ -441,8 +495,11 @@ class UnaryNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitUnary(self)
+
+    def generateMips(self, mips):
+        return mips.visitUnary(self)
 
 
 class SpecialUnaryNode(Node):
@@ -470,8 +527,11 @@ class SpecialUnaryNode(Node):
             return node
         return None
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitSpecialUnary(self)
+
+    def generateMips(self, mips):
+        return mips.visitSpecialUnary(self)
 
 
 class LiteralNode(Node):
@@ -497,5 +557,8 @@ class LiteralNode(Node):
                 val = False
         return val
 
-    def generateCode(self, llvm):
+    def generateLlvm(self, llvm):
         return llvm.visitLiteral(self)
+
+    def generateMips(self, mips):
+        return mips.visitLiteral(self)
