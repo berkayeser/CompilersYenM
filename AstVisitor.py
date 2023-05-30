@@ -10,6 +10,7 @@ class AstVisitor(CVisitor):
         self.symbol_table: SymbolTable = SymbolTable([0])
         self.cur_symbol_table: SymbolTable = self.symbol_table
         self.functions: list[(FuncDeclareNode,bool)] = [] # de bool om aan te duiden of het al gedefinieerd is
+        self.line_nr: int = -30
 
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
@@ -17,16 +18,18 @@ class AstVisitor(CVisitor):
 
         ast = AST()
         node = RunNode()
+        self.line_nr = 0
         if ctx.include():
+            #self.line_nr += 1
             self.visitInclude(ctx.include())
             #print(ctx.include().getText())
             node.include = True
         for child in ctx.children:
+            self.line_nr += 1
             if isinstance(child, CParser.FunctionContext):
                 node.children.append(self.visitFunction(child))
             elif isinstance(child, CParser.Global_varContext):
                 node.children.extend(self.visitGlobal_var(child))
-
                 #node.children.append(self.visitGlobal_var(child))
             elif isinstance(child, CParser.Forward_declareContext):
                 node.children.append(self.visitForward_declare(child))
@@ -79,7 +82,6 @@ class AstVisitor(CVisitor):
             temp = self.visitConst(ctx.const(0))
         else:
             temp = self.visitNot_const(ctx.not_const(0))
-
         firstNode = InstantiationNode()
         firstNode.const = isConst
         firstNode.varType = ctx.type_().getText()
@@ -277,10 +279,8 @@ class AstVisitor(CVisitor):
                 rnv = self.symbol_table.get_symbol(rnv.name, None, s)['type']
                 ##rnv = self.cur_symbol_table.get_symbol(rnv.name)['type']
                 ##self.cur_symbol_table.close_scope(self)
-            elif rnv.type == "term":
+            elif rnv.type == "term" or rnv.type == "factor" or rnv.type == "call":
                 # IDK what to do here
-                rnv = rt
-            elif rnv.type == "factor":
                 rnv = rt
             else:
                 print("error197")
@@ -352,12 +352,11 @@ class AstVisitor(CVisitor):
     def visitStatement(self, ctx: CParser.StatementContext,loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
-
-        line_nr = -1 #voor error line printing
+        self.line_nr += 1
         node = None
         if ctx.expression_statement():
             node = StatementNode()
-            node.statement = self.visitExpression_statement(ctx.expression_statement(), line_nr)
+            node.statement = self.visitExpression_statement(ctx.expression_statement())
             node.children.append(node.statement)
         elif ctx.array_initialisation():
             node = StatementNode()
@@ -368,7 +367,7 @@ class AstVisitor(CVisitor):
             node.statement = self.visitJump_statement(ctx.jump_statement(), loop)
             node.children.append(node.statement)
         elif ctx.compound_statement():
-            node = self.visitCompound_statement(ctx.compound_statement(), line_nr, loop)
+            node = self.visitCompound_statement(ctx.compound_statement(), loop)
             if isinstance(node, tuple):
                 whileNode = node[1]
                 node = node[0]
@@ -424,15 +423,18 @@ class AstVisitor(CVisitor):
         for fa in f_args:
             f_args1.append(fa.varType)
 
-        for ca in call_args:
-            if ca.value.type == "unary":
-                type = self.cur_symbol_table.get_symbol(ca.value.variable.name)["type"]
+        for ca in range(0, len(call_args)):
+            if call_args[ca].value.type == "unary":
+                type = self.cur_symbol_table.get_symbol(call_args[ca].value.variable.name)["type"]
                 call_args1.append(type + "*")
-            elif ca.value.type == "variable":
-                call_args1.append(self.cur_symbol_table.get_symbol(ca.value.name)["type"])
+            elif call_args[ca].value.type == "variable":
+                call_args1.append(self.cur_symbol_table.get_symbol(call_args[ca].value.name)["type"])
+            elif call_args[ca].value.type == "term":
+                call_args1.append(f_args1[ca])
 
             else:
-                call_args1.append(ca.value.literalType)
+
+                call_args1.append(call_args[ca].value.literalType)
 
         return [f_args1, call_args1]
 
@@ -451,7 +453,7 @@ class AstVisitor(CVisitor):
         elif found == 0:
             raise Exception(f"Error: Calling undeclared function '{node.name}'.")
 
-        # Second check for wrong function paremeters
+        # Second check for wrong function parameters
 
         f_args = function.arguments
         call_args = node.arguments
@@ -605,7 +607,7 @@ class AstVisitor(CVisitor):
             node.scope = self.cur_symbol_table.name
             return node
 
-    def visitCompound_statement(self, ctx: CParser.Compound_statementContext, line_nr: int = -1, loop:bool = False):
+    def visitCompound_statement(self, ctx: CParser.Compound_statementContext,  loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -615,7 +617,7 @@ class AstVisitor(CVisitor):
         elif ctx.while_():
             node = self.visitWhile(ctx.while_())
         elif ctx.for_():
-            node = self.visitFor(ctx.for_(), line_nr)
+            node = self.visitFor(ctx.for_())
 
         if node is None:
             raise Exception("Node is node")
@@ -660,14 +662,14 @@ class AstVisitor(CVisitor):
         return node
 
     # returns two nodes instead of one
-    def visitFor(self, ctx: CParser.ForContext, line_nr: int = -1):
+    def visitFor(self, ctx: CParser.ForContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
         While = WhileNode()
 
         Statement = StatementNode()
-        condition = self.visitFor_condition(ctx.for_condition(), line_nr)
+        condition = self.visitFor_condition(ctx.for_condition())
         Statement.statement = condition[0]
         Statement.children = [Statement.statement]
         While.condition = condition[1]
@@ -678,7 +680,7 @@ class AstVisitor(CVisitor):
 
         return Statement, While
 
-    def visitFor_condition(self, ctx: CParser.For_conditionContext, line_nr: int = -1):
+    def visitFor_condition(self, ctx: CParser.For_conditionContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
 
@@ -686,7 +688,7 @@ class AstVisitor(CVisitor):
 
         # changed assignment to assignment or instantiationExpression
         if ctx.assignment():
-            temp = self.visitAssignment(ctx.assignment(), line_nr)
+            temp = self.visitAssignment(ctx.assignment())
         else:
             temp = self.visitInstantiationExpression(ctx.instantiationExpression())[0]
 
@@ -702,6 +704,7 @@ class AstVisitor(CVisitor):
             if ctx.IDENTIFIER():
                 node.left = VariableNode()
                 node.left.name = ctx.getText()
+                node.left.line_nr = self.line_nr
             elif ctx.pointer():
                 node.left = self.visitPointer(ctx.pointer())
             node.right = self.visitLogicexpression(ctx.logicexpression())
@@ -709,7 +712,7 @@ class AstVisitor(CVisitor):
         else:
             return self.visitLogicexpression(ctx.logicexpression())
 
-    def visitExpression_statement(self, ctx: CParser.Expression_statementContext, line_nr:int = -1):
+    def visitExpression_statement(self, ctx: CParser.Expression_statementContext):
         if ctx.exception is not None:
             print(ctx.exception)
             raise Exception("syntax error")
@@ -717,9 +720,9 @@ class AstVisitor(CVisitor):
         node = ExpressionStatementNode()
         node.instruction = ctx.getText()
         if ctx.assignment():
-            node.children = [self.visitAssignment(ctx.assignment(), line_nr)]
+            node.children = [self.visitAssignment(ctx.assignment())]
         elif ctx.declaration():
-            node.children = [self.visitDeclaration(ctx.declaration(), line_nr)]
+            node.children = [self.visitDeclaration(ctx.declaration())]
         elif ctx.logicexpression():
             node.children = [self.visitLogicexpression(ctx.logicexpression())]
         # added instantiationExpression
@@ -734,6 +737,7 @@ class AstVisitor(CVisitor):
             raise Exception("syntax error")
         node = CommentNode()
         node.text = ctx.getText()
+        #self.line_nr +=1
         return node
 
     def semantic_assignment_check(self, node: AssignmentNode):
@@ -847,7 +851,7 @@ class AstVisitor(CVisitor):
                 print(
                     f"Syntax Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
 
-    def visitAssignment(self, ctx: CParser.AssignmentContext, line_nr: int = -1):
+    def visitAssignment(self, ctx: CParser.AssignmentContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if ctx.rvalue_assignment():
@@ -855,7 +859,7 @@ class AstVisitor(CVisitor):
 
         node = AssignmentNode()
         if ctx.declaration():
-            node.left = self.visitDeclaration(ctx.declaration(), line_nr)
+            node.left = self.visitDeclaration(ctx.declaration())
 
         # removed const instantiation
 
@@ -880,7 +884,7 @@ class AstVisitor(CVisitor):
                 raise Exception(
                     f"Semantic Error; Assignment to the const variable '{str(node.name)}' that has the type '{type1}'.")
 
-    def visitDeclaration(self, ctx: CParser.DeclarationContext, line_nr: int = -1):
+    def visitDeclaration(self, ctx: CParser.DeclarationContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
         node = None
@@ -1067,6 +1071,7 @@ class AstVisitor(CVisitor):
         elif ctx.IDENTIFIER():
             node = VariableNode()
             node.name = ctx.IDENTIFIER().__str__()
+            node.line_nr = self.line_nr
             # Use of an uninitialized variable
             self.cur_symbol_table.get_symbol(str(node.name), "unint")
         elif ctx.array():
@@ -1092,6 +1097,7 @@ class AstVisitor(CVisitor):
         if ctx.IDENTIFIER():
             variable = VariableNode()
             variable.name = ctx.IDENTIFIER().__str__()
+            variable.line_nr = self.line_nr
             # Use of an uninitialized variable
             self.cur_symbol_table.get_symbol(str(variable.name), "unint")
         elif ctx.pointer():

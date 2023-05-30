@@ -4,6 +4,7 @@ import struct
 class Node:
     children = []
     type = None
+    line_nr: int = -100
 
     def __init__(self):
         self.children = []
@@ -128,6 +129,20 @@ class ReturnNode(Node):
         else:
             print("error120")
 
+    def getargs(self, args):
+        call_args = []
+        for ca in args:
+            if ca.value.type == "unary":
+                type = ca.value.variable.name
+                call_args.append(type + "*")
+            elif ca.value.type == "variable":
+                call_args.append(ca.value.name)
+            elif ca.value.type == "term":
+                call_args.append("")
+            else:
+                call_args.append(ca.value.literalType)
+        return call_args
+
     def getASTvalue(self):
         if type(self.returnValue) == str:
             return self.type + " " + self.returnValue
@@ -138,8 +153,15 @@ class ReturnNode(Node):
         elif self.returnValue.type == "factor":
             return self.type + " " + str(self.convert(self.returnValue.left)) \
                 + str(self.returnValue.operation) + str(self.convert(self.returnValue.right))
-        else: # literal node
+        elif self.returnValue.type == "call":
+            return self.type + " " + str(self.returnValue.name) + str(self.getargs(self.returnValue.arguments))
+        elif self.returnValue.type == "literal":
             return self.type + " " + str(self.returnValue.value)
+        else:
+            print("error147")
+
+    def generateMips(self, mips):
+        return mips.visitReturn(self)
 
 
 
