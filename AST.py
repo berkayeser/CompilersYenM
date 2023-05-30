@@ -9,6 +9,7 @@ import sys
 
 class AST:
     root = None
+    symbol_table = None
 
     # Define the visualize function
     def vis(self, fn: str):

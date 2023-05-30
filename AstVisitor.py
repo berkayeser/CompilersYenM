@@ -10,6 +10,7 @@ class AstVisitor(CVisitor):
         self.symbol_table: SymbolTable = SymbolTable([0])
         self.cur_symbol_table: SymbolTable = self.symbol_table
         self.functions: list[(FuncDeclareNode,bool)] = [] # de bool om aan te duiden of het al gedefinieerd is
+
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
             raise Exception("syntax error")
@@ -32,6 +33,7 @@ class AstVisitor(CVisitor):
             elif isinstance(child, CParser.CommentContext):
                 node.children.append(self.visitComment(child))
         ast.root = node
+        ast.symbol_table = self.symbol_table
         return ast
 
     def visitInclude(self, ctx:CParser.IncludeContext):
