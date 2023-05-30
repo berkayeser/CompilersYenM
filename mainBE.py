@@ -5,7 +5,7 @@ from AstVisitor import *
 from AST import AST
 from AstOptimizer import AstOptimizer
 from LLVMVisitor import LLVMVisitor
-
+from MIPSVisitor import MIPSVisitor
 # Test script that automatically runs our Compiler on specified C files.
 # Just run "python3 main.py"
 
@@ -48,11 +48,11 @@ def main(argv):
                 #llvm = LLVMVisitor()
                 #llvm.file = ll_directory_path + "/" + filename[0:-2] + ".ll"
                 ast = optimizer.optimize(ast, visitor.symbol_table)
-
+                mips = MIPSVisitor()
                 if visFlag:
                     ast.vis(filename)
                     #visitor.symbol_table.st_print(True)
-
+                    #ast.generateMips(mips)
                     #ast.generateLLVM(llvm)
                 #except Exception as error:
                 #     print(error, flush=True)
