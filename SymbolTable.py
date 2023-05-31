@@ -1,4 +1,3 @@
-# from AstVisitor import AstVisitor as astvis
 class AstVisitor:
     pass
 
@@ -23,7 +22,7 @@ class SymbolTable:
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True}
+            self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True, 'declarations': []}
 
     def symbol_used_current(self, name: str):
         if name not in self.scope1:
@@ -43,13 +42,19 @@ class SymbolTable:
         """
         self.scope1[name]['assignOnce'] = False
 
-    def add_symbol_value(self, name, value):
+    def add_symbol_value(self, name, value, line_nr:int = -99):
+        if line_nr == -99:
+            raise Exception("input line nr")
+
         if name not in self.scope1:
-            # instantieren in huidige scope
-            symbol = self.get_symbol(name, "undef")
             # Als je in een diepere functie bent, wordt dit symbool ineens toegevoegd aan de huidige scope
+            symbol = self.get_symbol(name, "undef")
+            # instantieren in huidige scope
             self.add_symbol(name, symbol['type'])
+
         self.scope1[name]['value'] = value
+        # line_nr ook toevoegen
+        self.scope1[name]['declarations'].append([line_nr, value])
 
     def get_symbol(self, name, errortype=None, input_scope: list[int] = None):
         scope = self
@@ -73,6 +78,41 @@ class SymbolTable:
         else:
             scope.st_print()
             raise Exception(f"Symbol '{name}' is ?????????")
+
+    def get_most_recent_value(self, name:str, cln: int, cs: list) -> int:
+        # cln = current line number
+        value:int = 0
+        vln: int = 0  # var_st_line_nr: lijn van de declaratie van deze waarde
+        flag: bool = False
+
+        scopes = cs.copy()
+        scopes.pop(0)
+        scope = self
+        while scope is not None:
+
+            symbol = {}
+            if name in scope.scope1.keys():
+                symbol = scope.scope1[name]
+            else:
+                symbol['declarations'] = []
+
+            for decl in symbol['declarations']:
+                vln = decl[0]
+                if vln < cln:
+                    flag = True
+                    value = decl[1]
+                elif vln == cln:
+                    print("error97")
+            if scopes:
+                scope = scope.subScopes[scopes[0]]
+                scopes.pop(0)
+            else:
+                scope = None
+
+        if flag:
+            return value
+        else:
+            return None
 
     def open_scope(self, vis: AstVisitor):
         # self.scopes.append(dict())

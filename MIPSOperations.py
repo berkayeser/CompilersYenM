@@ -18,11 +18,8 @@ def handle_condition(self ,var1, var2, operator :str) -> str:
 
     return string
 
-def increase_label(label:str) -> str:
-    integer = int(label[1:])
-    return "L" + str(integer + 1)
 
-def handle_condition_if(operator:str, label:str) -> str:
+def handle_condition_if(operator:str, label:str) -> list[str]:
         # Assumes the condition variables, are in $t0 and $t1
         # For an If loop, we need to reverse the condition
         string:str = ""
@@ -42,4 +39,4 @@ def handle_condition_if(operator:str, label:str) -> str:
         else:
             print("error")
 
-        return string
+        return [string]
