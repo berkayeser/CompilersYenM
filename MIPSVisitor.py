@@ -4,7 +4,7 @@ from SymbolTable import SymbolTable
 from MIPSOperations import *
 
 class MIPSVisitor:
-    def __int__(self):
+    def __init__(self):
         self.file = ""
         self.data = [".data"]
         self.text = [".text"]
@@ -12,7 +12,7 @@ class MIPSVisitor:
         self.sreg = 0
         self.sp = 0
         self.fp = 0
-        self.symbolTable = None
+        self.symbolTable: SymbolTable = SymbolTable([0])
         # block labels
         self.blocks = []
         self.cur_new_label = "L"
@@ -98,7 +98,7 @@ class MIPSVisitor:
         else:
             variable = self.declareLocal(node.varType)
 
-        # fix symbolTable
+        self.symbolTable.add_symbol(variable)
 
         return variable
 
@@ -109,6 +109,8 @@ class MIPSVisitor:
             type = "byte"
         elif type == "float":
             type = "float"
+        else:
+            print(f"error {type} ")
         self.data.append(f"{name}: .{type} 0")
         return Global(name, type)
 
@@ -134,7 +136,9 @@ class MIPSVisitor:
         return Local(self.sp, type)
 
     def visitVariable(self, node: VariableNode):
-        return self.symbolTable[node.name]
+        #symbol = self.symbolTable[node.name]
+        symbol = self.symbolTable.get_symbol(node.name)
+        return symbol
 
     def visitLiteral(self, node: LiteralNode):
         return convertNode(node)
