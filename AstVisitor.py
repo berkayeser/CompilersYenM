@@ -11,6 +11,8 @@ class AstVisitor(CVisitor):
         self.cur_symbol_table: SymbolTable = self.symbol_table
         self.functions: list[(FuncDeclareNode,bool)] = [] # de bool om aan te duiden of het al gedefinieerd is
         self.line_nr: int = -30
+        self.loop = False
+        #self.declarations  = None
 
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
@@ -72,7 +74,7 @@ class AstVisitor(CVisitor):
                 self.cur_symbol_table.add_symbol(str(node.name), str(node.varType))
 
 
-    def visitInstantiationExpression(self, ctx: CParser.InstantiationExpressionContext):
+    def visitInstantiationExpression(self, ctx: CParser.InstantiationExpressionContext, loop:bool = False):
         nodes = []
         isConst = False
         if ctx.CONST():
@@ -219,7 +221,7 @@ class AstVisitor(CVisitor):
         node.name = ctx.IDENTIFIER().getText()
 
         self.cur_symbol_table.add_symbol(node.name, node.varType, False)
-        self.cur_symbol_table.add_symbol_value(node.name, 0)
+        self.cur_symbol_table.add_symbol_value(node.name, 0, -100)
 
         if ctx.COMMA():
             allArgs = [node]
@@ -615,9 +617,13 @@ class AstVisitor(CVisitor):
         if ctx.if_():
             node = self.visitIf(ctx.if_(), loop)
         elif ctx.while_():
+            self.loop = True
             node = self.visitWhile(ctx.while_())
+            self.loop = False
         elif ctx.for_():
+            self.loop = True
             node = self.visitFor(ctx.for_())
+            self.loop = False
 
         if node is None:
             raise Exception("Node is node")
@@ -747,13 +753,13 @@ class AstVisitor(CVisitor):
             if node.left.type in ['instantiation', 'variable']:
                 # Als de waarde van dit symbool voorheen al ingevuld is, duiden we dit aan
                 # if self.symbol_table.get_symbol(node.left.name)['value'] is not None:
-                if self.cur_symbol_table.symbol_used_current(node.left.name):
+                if 2 == 3:
                     self.cur_symbol_table.symbol_used_twice(node.left.name)
                 else:
                     n:str = node.left.name
                     if not isinstance(n,str):
                         n = n.getText()
-                    self.cur_symbol_table.add_symbol_value(n, node.right.value)
+                    self.cur_symbol_table.add_symbol_value(n, node.right.value, self.line_nr)
                     # Scope toevoegen
                     # node.scope = self.cur_symbol_table.name
 
@@ -851,7 +857,7 @@ class AstVisitor(CVisitor):
                 print(
                     f"Syntax Warning; During definition, Variable '{nodeRn}' of type '{nodeRt}' gets assigned to variable '{nodeLn}' of incompatible type '{nodeLt}'. ")
 
-    def visitAssignment(self, ctx: CParser.AssignmentContext):
+    def visitAssignment(self, ctx: CParser.AssignmentContext, loop:bool = False):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if ctx.rvalue_assignment():
@@ -1072,6 +1078,8 @@ class AstVisitor(CVisitor):
             node = VariableNode()
             node.name = ctx.IDENTIFIER().__str__()
             node.line_nr = self.line_nr
+            if self.loop:
+                node.line_nr = - node.line_nr
             # Use of an uninitialized variable
             self.cur_symbol_table.get_symbol(str(node.name), "unint")
         elif ctx.array():

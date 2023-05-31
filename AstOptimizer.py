@@ -27,13 +27,19 @@ class AstOptimizer:
         if node.type == "printf":
             for i in range(0,len(node.arguments)):
                 av = node.arguments[i].value
-                if not isinstance(av,str) and av.type == "variable":
-                    avn = node.arguments[i].value.name
-                    s = node.scope
-                    avs = self.st.get_symbol(avn, None, s)
 
-                    if avs['value'] is not None and avs['assignOnce'] is True:
-                        v = avs['value']
+                if not isinstance(av,str) and av.type == "variable":
+                    cln: int = av.line_nr
+                    if cln < 0:
+                        continue
+
+                    avn: str = node.arguments[i].value.name
+                    s: list = node.scope
+                    avs = self.st.get_symbol(avn, None, s)
+                    v = self.st.get_most_recent_value(avn, cln, s)
+
+                    #if avs['value'] is not None and avs['assignOnce'] is True:
+                    if v is not None:
                         new_node = LiteralNode()
                         new_node.value = v
                         nlt = avs['type']
@@ -41,6 +47,7 @@ class AstOptimizer:
                             nlt = nlt[5:]
                         new_node.literalType = nlt
                         node.arguments[i].value = new_node
+                    print()
 
         # Secondly, all other nodes
         for i in range(len(node.children)):
