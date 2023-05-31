@@ -364,3 +364,31 @@ class MIPSVisitor:
         result = temp[0]
         self.text.append(temp[1])
         return result
+
+    def visitReturn(self, node:ReturnNode):
+        type = node.returnValue # Is een Variable, Literal, Term, Function call, ...
+        # Bv literal
+        # De literal waarde steken in $2/$v0
+        value = node.returnValue.value
+
+        # Variabele
+        # variabele waarde halen uit $fp met offset, en 'lw' in $2/$v0
+
+        # Term
+        # uitrekenen en steken in $2/$v0
+
+        # Tenslotte " jr $ra "
+        self.text.append("jr $ra")
+
+
+    def visitFunction(self, node: FunctionNode):
+        declaration = node.declaration
+        label:str = declaration.name
+
+        self.text.append("label"+ ": ")
+
+        # De argumenten zullen steken in $4-7/$a0-3
+        # Meteen steken in de $fp met offset met 'sw'
+
+        # In dit blok wordt de return ook verwerkt
+        self.visitBlock(node.block)
