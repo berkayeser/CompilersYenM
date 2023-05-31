@@ -294,8 +294,8 @@ class InstantiationNode(Node):
     def generateLlvm(self, llvm):
         return llvm.visitInstantiation(self)
 
-    def generateMips(self, mips):
-        return mips.visitInstantiation(self)
+    def generateMips(self, mips, global_var=False):
+        return mips.visitInstantiation(self, global_var)
 
 
 class VariableNode(Node):

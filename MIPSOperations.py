@@ -1,3 +1,23 @@
+import struct
+from Nodes import *
+
+class Local:
+    def __init__(self, offset, type):
+        self.offset = offset
+        self.type = type
+
+
+class Global:
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+
+
+class Temp:
+    def __init__(self, value, type):
+        self.value = value
+        self.type = type
+
 
 def handle_condition(self ,var1, var2, operator :str) -> str:
     string :str = ""
@@ -40,3 +60,28 @@ def handle_condition_if(operator:str, label:str) -> list[str]:
             print("error")
 
         return [string]
+
+def float_to_64bit_hex(x):
+    if isinstance(x, str):
+        x = float(x)
+    bytes_of_x = struct.pack('>f', x)
+    x_as_int = struct.unpack('>f', bytes_of_x)[0]
+    x_as_double = struct.pack('>d', x_as_int).hex()
+    x_as_double = '0x' + x_as_double
+    return x_as_double
+
+def convertNode(node: LiteralNode):
+    value = node.convertValType()
+    nlt = str(node.literalType)
+    if nlt == "int":
+        return Temp(value, "word")
+    elif nlt == "float":
+        return Temp(float_to_64bit_hex(value), "float")
+    elif nlt == "char":
+        return Temp(value, "byte")
+    elif nlt == "bool":
+        if value:
+            return Temp(1, "word")
+        return Temp(0, "word")
+    raise Exception(f"Node Literal Type '{nlt}' not supported")
+
