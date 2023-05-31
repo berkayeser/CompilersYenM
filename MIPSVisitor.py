@@ -8,6 +8,8 @@ class MIPSVisitor:
         self.file = ""
         self.data = [".data"]
         self.text = [".text"]
+        self.treg = 0
+        self.sreg = 0
         self.sp = 0
         self.fp = 0
         self.symbolTable = None
@@ -356,5 +358,5 @@ class MIPSVisitor:
             else:
                 temp = sub(self.tempVar(), val, LlvmType("i32", 1))
         result = temp[0]
-        self.instructions.append(temp[1])
+        self.text.append(temp[1])
         return result

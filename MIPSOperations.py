@@ -3,20 +3,42 @@ from Nodes import *
 
 class Local:
     def __init__(self, offset, type):
+        self.register = 0
         self.offset = offset
         self.type = type
+
+    def load(self, sp):
+        if self.type == "float":
+            return f"l.s $f{self.register}, {sp - self.offset}($sp)"
+        else:
+            return f"lw $t{self.register}, {sp - self.offset}($sp)"
 
 
 class Global:
     def __init__(self, name, type):
+        self.register = 0
         self.name = name
         self.type = type
+
+    def load(self, sp):
+        if self.type == "float":
+            return f"l.s $f{self.register}, {self.name}"
+        else:
+            return f"lw $t{self.register}, {self.name}"
 
 
 class Temp:
     def __init__(self, value, type):
+        self.register = 0
         self.value = value
         self.type = type
+
+    def load(self, sp):
+        if self.type == "float":
+            return f"li.s $f{self.register}, {self.value}"
+        else:
+            return f"li $t{self.register}, {self.value}"
+
 
 
 def handle_condition(self ,var1, var2, operator :str) -> str:
