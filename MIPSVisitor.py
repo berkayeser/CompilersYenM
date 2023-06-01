@@ -18,8 +18,6 @@ class MIPSVisitor:
         self.blocks = []
         self.cur_new_label = "L"
 
-    def includeStdio(self):
-        pass
 
 
     def visitRun(self, node: RunNode):
@@ -420,3 +418,18 @@ class MIPSVisitor:
 
         # In dit blok wordt de return ook verwerkt
         self.visitBlock(node.block)
+
+    def visitBlock(self, node: BlockNode):
+        for statement in node.children:
+            statement.generateMips(self)
+
+    def visitStatement(self, node: StatementNode):
+        pass
+
+    def includeStdio(self):
+        pass
+
+    def visitComment(self, node: CommentNode):
+        pass
+
+    #def visitLine(self, node:StatementNode):

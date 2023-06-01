@@ -76,3 +76,6 @@ class AST:
 
     def generateLLVM(self, llvm):
         self.root.generateCode(llvm)
+
+    def generateMips(self, mips):
+        self.root.generateMips(mips)

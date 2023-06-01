@@ -5,19 +5,25 @@ from AstVisitor import *
 from AST import AST
 from AstOptimizer import AstOptimizer
 from LLVMVisitor import LLVMVisitor
+from MIPSVisitor import *
 
 # Test script that automatically runs our Compiler on specified C files.
 # Just run "python3 main.py"
 
 def main(argv):
-    visFlag = True
-    if 'output' not in os.listdir('tests'):  # Als de folder 'll' nog niet bestaat
+    vis_tree_flag: bool = True
+    vis_st_flag: bool = False
+
+    if 'output' not in os.listdir('tests'):  # Als de folder 'output' nog niet bestaat
         os.mkdir('tests/output')  # Maak een folder genaamd 'output' aan
-    if visFlag and 'ast_files' not in os.listdir('tests/output'): # Als de folder 'output' nog niet bestaat
+    if 'asm_files' not in os.listdir('tests/output'):  # Als de folder 'asm' nog niet bestaat
+        os.mkdir('tests/output/asm_files')  # Maak een folder genaamd 'asm' aan
+    if vis_tree_flag and 'ast_files' not in os.listdir('tests/output'): # Als de folder 'output' nog niet bestaat
         os.mkdir('tests/output/ast_files') # Maak een folder genaamd 'output' aan
         os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
     tests_directory_path = "tests/alle_projecten"
+    asm_directory_path = "tests/output/asm_files"
 
     for foldername in os.listdir(tests_directory_path):
         print(f"\nEntering project {foldername}. \n")
@@ -40,9 +46,14 @@ def main(argv):
                     ast = visitor.visit(tree)
                     ast = optimizer.optimize(ast, visitor.symbol_table)
 
-                    if visFlag:
+                    if vis_tree_flag:
                         ast.vis(filename)
-                        #visitor.symbol_table.st_print()
+                    if vis_st_flag:
+                        visitor.symbol_table.st_print(True)
+
+                    mips = MIPSVisitor()
+                    mips.file = asm_directory_path + "/" + filename[0:-2] + ".asm"
+                    ast.generateMips(mips)
 
                 except Exception as error:
                      print(error, flush=True)

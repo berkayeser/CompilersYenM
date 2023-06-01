@@ -53,6 +53,9 @@ class FunctionNode(Node):
     declaration = None  # FuncDeclareNode
     block = [] #BlockNode
 
+    def generateMips(self, mips):
+        return mips.visitFunction(self)
+
 
 class PrintfNode(Node):
     type = "printf"
@@ -198,7 +201,7 @@ class StatementNode(Node):
         return llvm.visitLine(self)
 
     def generateMips(self, mips):
-        return mips.visitLine(self)
+        return mips.visitStatement(self)
 
 
 class IfNode(Node):
