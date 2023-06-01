@@ -9,6 +9,7 @@ class MIPSVisitor:
         self.data = [".data"]
         self.text = [".text"]
         self.treg = 0
+        self.freg = 0
         self.sreg = 0
         self.sp = 0
         self.fp = 0
@@ -136,12 +137,45 @@ class MIPSVisitor:
         return Local(self.sp, type)
 
     def visitVariable(self, node: VariableNode):
-        #symbol = self.symbolTable[node.name]
-        symbol = self.symbolTable.get_symbol(node.name)
-        return symbol
+        register = self.symbolTable.get_symbol(node.name)
+        if register.type == "f":
+            register_nr = self.freg
+            self.freg += 1
+        else:
+            register_nr = self.treg
+            self.treg += 1
+
+        if isinstance(register, Global):
+            temp = register.loadGlobal(register_nr)
+            self.text.append(temp[0])
+            register = temp[1]
+        elif isinstance(register, Local):
+            temp = register.loadLocal(register_nr, self.sp)
+            self.text.append(temp[0])
+            register = temp[1]
+
+        return register
 
     def visitLiteral(self, node: LiteralNode):
-        return convertNode(node)
+        value = node.convertValType()
+        nlt = str(node.literalType)
+        register = Register()
+        if nlt == "int":
+            register.assign(self.treg, "t")
+            self.text.append(register.load(value))
+        elif nlt == "float":
+            register.assign(self.freg, "f")
+            self.text.append(register.load(float_to_64bit_hex(value)))
+        elif nlt == "char":
+            register.assign(self.treg, "t")
+            self.text.append(register.load(value))
+        elif nlt == "bool":
+            register.assign(self.treg, "t")
+            if value:
+                self.text.append(register.load(1))
+            else:
+                self.text.append(register.load(0))
+        return register
 
     def visitAssignment(self, node: AssignmentNode):
         variable = node.left.generateCode(self)
@@ -346,11 +380,9 @@ class MIPSVisitor:
         return newValue
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
-        val = node.variable.generateCode(self)
+        register = node.variable.generateCode(self)
         temp = None
-        floatType = False
-        if val.varType == "float":
-            floatType = True
+        floatType = (register.type == "f")
         if node.operation == "++":
             if floatType:
                 temp = fadd(self.tempVar(), val, LlvmType("float", 1))
