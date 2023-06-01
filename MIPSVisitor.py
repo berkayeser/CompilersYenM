@@ -316,38 +316,35 @@ class MIPSVisitor:
     #     self.instructions.append(temp[1])
     #     return result
     #
-    # def visitUnary(self, node: UnaryNode):
-    #     val = node.variable.generateCode(self)
-    #     if node.operation == "&":
-    #         val.address = True
-    #         return val
-    #     elif node.operation == "*":
-    #         temp = load(self.tempVar(), val)
-    #         result = temp[0]
-    #         self.instructions.append(temp[1])
-    #         return result
-    #     val = self.getValue(val)
-    #     temp = None
-    #     floatType = False
-    #     if val.varType == "float":
-    #         floatType = True
-    #     if node.operation == "-":
-    #         if floatType:
-    #             temp = fneg(self.tempVar(), val)
-    #         else:
-    #             temp = neg(self.tempVar(), val)
-    #     elif node.operation == "!":
-    #         if floatType:
-    #             toInt = fptosi(self.tempVar(), val)
-    #             val = toInt[0]
-    #             self.instructions.append(toInt[1])
-    #         temp = xor(self.tempVar(), val, LlvmType("i32", 1))
-    #     result = temp[0]
-    #     self.instructions.append(temp[1])
-    #     return result
-    #
+    def visitUnary(self, node: UnaryNode):
+        register = node.variable.generateMips(self)
+        # if node.operation == "&":
+        #     register.address = True
+        #     return register
+        # if node.operation == "*":
+        #     f"lw newRegister "
+        #     temp = load(self.tempVar(), val)
+        #     result = temp[0]
+        #     self.instructions.append(temp[1])
+        #     return result
+        # register = self.getValue(register)
+        instruction = ""
+        floatType = register.type == "f"
+        if node.operation == "-":
+            self.text.append(neg(register, register))
+        elif node.operation == "!":
+            if floatType:
+                register.assign(self.treg, "t")
+                self.treg += 1
+                self.freg -= 1
+                self.text.append(convert_float_to_int(register, register))
+            self.text.append(logical_not(register, register))
+        elif node.operation == "+":
+            return register
+        return register
+
     def visitTypeCast(self, node: TypeCastNode):
-        register = node.variable.generateCode(self)
+        register = node.variable.generateMips(self)
         cast = node.castTo
         newRegister = Register()
         if cast == "float" and register.type != "f":
@@ -371,7 +368,7 @@ class MIPSVisitor:
         return newRegister
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
-        register = node.variable.generateCode(self)
+        register = node.variable.generateMips(self)
         instruction = None
         floatType = (register.type == "f")
         if node.operation == "++":

@@ -21,6 +21,9 @@ class Node:
     def generateLlvm(self, llvm):
         pass
 
+    def generateMips(self, mips):
+        pass
+
 
 class RunNode(Node):
     type = "run"
@@ -186,13 +189,15 @@ class BlockNode(Node):
         for i in self.children:
             i.generateLlvm(llvm)
 
+    def generateMips(self, mips):
+        for i in self.children:
+            i.generateMips(mips)
+
 
 class StatementNode(Node):
     type = "line"
     statement = None
     comment = None
-
-
 
     def generateLlvm(self, llvm):
         return llvm.visitLine(self)
