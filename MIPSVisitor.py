@@ -220,69 +220,45 @@ class MIPSVisitor:
     #     self.instructions.append(temp[1])
     #     return result
     #
-    # def visitCompare(self, node: CompareNode):
-    #     leftVal = self.getValue(node.left.generateCode(self))
-    #     rightVal = self.getValue(node.right.generateCode(self))
-    #     keyword = ""
-    #     temp = self.richerConversion(leftVal, rightVal)
-    #     leftVal = temp[0]
-    #     rightVal = temp[1]
-    #     floatType = temp[2]
-    #     if floatType:
-    #         if node.operation == "<":
-    #             keyword = "olt"
-    #         elif node.operation == "<=":
-    #             keyword = "ole"
-    #         elif node.operation == "==":
-    #             keyword = "oeq"
-    #         elif node.operation == "!=":
-    #             keyword = "one"
-    #         elif node.operation == ">=":
-    #             keyword = "oge"
-    #         elif node.operation == ">":
-    #             keyword = "ogt"
-    #         temp = fcmp(keyword, self.tempVar(), leftVal, rightVal)
-    #         result = temp[0]
-    #         self.instructions.append(temp[1])
-    #     else:
-    #         if node.operation == "<":
-    #             keyword = "slt"
-    #         elif node.operation == "<=":
-    #             keyword = "sle"
-    #         elif node.operation == "==":
-    #             keyword = "eq"
-    #         elif node.operation == "!=":
-    #             keyword = "ne"
-    #         elif node.operation == ">=":
-    #             keyword = "sge"
-    #         elif node.operation == ">":
-    #             keyword = "sgt"
-    #         temp = icmp(keyword, self.tempVar(), leftVal, rightVal)
-    #         result = temp[0]
-    #         self.instructions.append(temp[1])
-    #     return result
-    #
-    # def visitTerm(self, node: TermNode):
-    #     leftVal = self.getValue(node.left.generateCode(self))
-    #     rightVal = self.getValue(node.right.generateCode(self))
-    #     temp = self.richerConversion(leftVal, rightVal)
-    #     leftVal = temp[0]
-    #     rightVal = temp[1]
-    #     floatType = temp[2]
-    #     if floatType:
-    #         if node.operation == "+":
-    #             temp = fadd(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "-":
-    #             temp = fsub(self.tempVar(), leftVal, rightVal)
-    #     else:
-    #         if node.operation == "+":
-    #             temp = add(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "-":
-    #             temp = sub(self.tempVar(), leftVal, rightVal)
-    #     result = temp[0]
-    #     self.instructions.append(temp[1])
-    #     return result
-    #
+
+    # TODO: check if I free the registers after operations
+
+    def visitCompare(self, node: CompareNode):
+        lRegister = node.left.generateMips(self)
+        rRegister = node.right.generateMips(self)
+        temp = self.richerConversion(lRegister, rRegister)
+        lRegister = temp[0]
+        rRegister = temp[1]
+        instruction = ""
+        tempRegister = Register()
+        if lRegister.type == "f":
+            tempRegister.assign(self.treg, "t")
+            self.text.append(tempRegister.load(1))
+        instruction = compare(node.operation, lRegister, lRegister, rRegister, tempRegister)
+        self.text.append(instruction)
+        return lRegister
+
+    def visitTerm(self, node: TermNode):
+        lRegister = node.left.generateMips(self)
+        rRegister = node.right.generateMips(self)
+        temp = self.richerConversion(lRegister, rRegister)
+        lRegister = temp[0]
+        rRegister = temp[1]
+        instruction = ""
+        if rRegister.type == "f":
+            self.freg -= 1
+        elif rRegister.type == "s":
+            self.sreg -= 1
+        else:
+            self.treg -= 1
+        if node.operation == "+":
+            instruction = add(lRegister, lRegister, rRegister)
+        elif node.operation == "-":
+            instruction = sub(lRegister, lRegister, rRegister)
+        result = temp[0]
+        self.text.append(instruction)
+        return result
+
     def visitFactor(self, node: FactorNode):
         lRegister = node.left.generateMips(self)
         rRegister = node.right.generateMips(self)
@@ -364,7 +340,7 @@ class MIPSVisitor:
             if floatType:
                 tempRegister = Register()
                 tempRegister.assign(self.freg, "f")
-                self.text.append(tempRegister.load(1))
+                self.text.append(tempRegister.load(1, self.treg))
                 instruction = add(register, register, tempRegister)
             else:
                 instruction = addi(register, register, 1)
@@ -372,7 +348,7 @@ class MIPSVisitor:
             if floatType:
                 tempRegister = Register()
                 tempRegister.assign(self.freg, "f")
-                self.text.append(tempRegister.load(1))
+                self.text.append(tempRegister.load(1, self.treg))
                 instruction = sub(register, register, tempRegister)
             else:
                 instruction = subi(register, register, 1)

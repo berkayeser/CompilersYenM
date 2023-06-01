@@ -10,9 +10,10 @@ class Register:
         self.register = register_nr
         self.type = type1
 
-    def load(self, value):
+    def load(self, value, register_nr=0):
         if self.type == "f":
-            return f"li.s $f{self.register}, {value}"
+            return f"li $t{register_nr}, {value}\n" \
+                   f"mtc1 $t{register_nr}, $f{self.register}"
         elif self.type == "s":
             return f"li $s{self.register}, {value}"
         else:
@@ -184,3 +185,50 @@ def modulo(dest, src1, src2):
     else:  # Assuming data_type is "int"
         return f"div {src1}, {src2}\n" \
                f"mfhi {dest}"
+
+
+def compare(dest, op, src1, src2, temp=None):
+    if dest.type == "f":
+        if op == "<":
+            return f"c.lt.s {src1}, {src2}\n" \
+                   f"movt {dest}, {temp}\n" \
+                   f"movf {dest}, $zero"
+        elif op == ">":
+            return f"c.lt.s {src2}, {src1}\n" \
+                   f"movt {dest}, {temp}\n" \
+                   f"movf {dest}, $zero"
+        elif op == "<=":
+            return f"c.le.s {src1}, {src2}\n" \
+                   f"movt {dest}, {temp}\n" \
+                   f"movf {dest}, $zero"
+        elif op == ">=":
+            return f"c.le.s {src2}, {src1}\n" \
+                   f"movt {dest}, {temp}\n" \
+                   f"movf {dest}, $zero"
+        elif op == "==":
+            return f"c.eq.s {src1}, {src2}\n" \
+                   f"movt {dest}, {temp}\n" \
+                   f"movf {dest}, $zero"
+        elif op == "!=":
+            return f"c.eq.s {src1}, {src2}\n" \
+                   f"movt {dest}, $zero\n" \
+                   f"movf {dest}, {temp}"
+        else:
+            raise ValueError("Invalid comparison operator")
+    else:
+        if op == "<":
+            return f"slt {dest}, {src1}, {src2}"
+        elif op == ">":
+            return f"slt {dest}, {src2}, {src1}"
+        elif op == "<=":
+            return f"slt {dest}, {src2}, {src1}\n" \
+                   f"xori {dest}, {dest}, 1"
+        elif op == ">=":
+            return f"slt {dest}, {src1}, {src2}\n" \
+                   f"xori {dest}, {dest}, 1"
+        elif op == "==":
+            return f"seq {dest}, {src1}, {src2}"
+        elif op == "!=":
+            return f"sne {dest}, {src1}, {src2}"
+        else:
+            raise ValueError("Invalid comparison operator")
