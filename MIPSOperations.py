@@ -149,3 +149,12 @@ def convert_float_to_int(dest, src):
 
 def convert_int_to_float(dest, src):
     return f"cvt.s.w {dest}, {src}"
+
+def neg(dest, src):
+    if dest.type == "f":
+        return f"neg.s {dest}, {src}"
+    else:
+        return f"neg {dest}, {src}"
+
+def logical_not(dest, src):
+    return f"xori {dest}, {src}, 1"
