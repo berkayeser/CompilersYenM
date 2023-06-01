@@ -18,6 +18,9 @@ class Register:
         else:
             return f"li $t{self.register}, {value}"
 
+    def __repr__(self):
+        return f"${self.type}{self.register}"
+
 
 class Local(Register):
     def __init__(self, offset, type):
@@ -104,37 +107,45 @@ def float_to_64bit_hex(x):
     return x_as_double
 
 
-def add(self, dest, src1, src2):
-    if self.type == "f":
+def add(dest, src1, src2):
+    if dest.type == "f":
         return f"add.s {dest}, {src1}, {src2}"
-    elif self.type == "s":
+    elif dest.type == "s":
         return f"add {dest}, {src1}, {src2}"
     else:
         return f"addu {dest}, {src1}, {src2}"
 
 
-def sub(self, dest, src1, src2):
-    if self.type == "f":
+def sub(dest, src1, src2):
+    if dest.type == "f":
         return f"sub.s {dest}, {src1}, {src2}"
-    elif self.type == "s":
+    elif dest.type == "s":
         return f"sub {dest}, {src1}, {src2}"
     else:
         return f"subu {dest}, {src1}, {src2}"
 
 
-def addi(self, dest, src, immediate):
-    if self.type == "f":
+def addi(dest, src, immediate):
+    if dest.type == "f":
         raise ValueError("Cannot perform addi operation on floating-point register")
-    elif self.type == "s":
+    elif dest.type == "s":
         return f"addi {dest}, {src}, {immediate}"
     else:
         return f"addiu {dest}, {src}, {immediate}"
 
 
-def subi(self, dest, src, immediate):
-    if self.type == "f":
+def subi(dest, src, immediate):
+    if dest.type == "f":
         raise ValueError("Cannot perform subi operation on floating-point register")
-    elif self.type == "s":
+    elif dest.type == "s":
         return f"subi {dest}, {src}, {immediate}"
     else:
         return f"subiu {dest}, {src}, {immediate}"
+
+
+def convert_float_to_int(dest, src):
+    return f"cvt.w.s {dest}, {src}"
+
+
+def convert_int_to_float(dest, src):
+    return f"cvt.s.w {dest}, {src}"

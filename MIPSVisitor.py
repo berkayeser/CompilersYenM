@@ -177,225 +177,221 @@ class MIPSVisitor:
                 self.text.append(register.load(0))
         return register
 
-    def visitAssignment(self, node: AssignmentNode):
-        variable = node.left.generateCode(self)
-
-        # implicit conversion
-        if node.right.type == "literal" and "float" in variable.varType:
-            if node.right.literalType == "int":
-                node.right.literalType = "float"
-
-        result = node.right.generateCode(self)
-
-        if result.address:
-            self.instructions.append(store(result, variable))
-            return
-        tempResult = result
-        result = self.getValue(result)
-
-        # als result al één of meerdere keren gedereferenced werd, dan zal het niet opnieuw gebeuren
-        # in getValue() wat wel moet
-        if tempResult == result and result.varType[-1] == "*":
-            temp = load(self.tempVar(), result)
-            result = temp[0]
-            self.instructions.append(temp[1])
-        self.instructions.append(store(result, variable))
-
-    def visitLogic(self, node: LogicNode):
-        leftVal = self.getValue(node.left.generateCode(self))
-        rightVal = self.getValue(node.right.generateCode(self))
-        temp = self.richerConversion(leftVal, rightVal)
-        leftVal = temp[0]
-        rightVal = temp[1]
-        floatType = temp[2]
-        if floatType:
-            if node.operation == "&&":
-                temp = fcmpLogic("and", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
-            elif node.operation == "||":
-                temp = fcmpLogic("or", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
-        else:
-            if node.operation == "&&":
-                temp = logic("and", self.tempVar(), leftVal, rightVal)
-            elif node.operation == "||":
-                temp = logic("or", self.tempVar(), leftVal, rightVal)
-        result = temp[0]
-        self.instructions.append(temp[1])
-        return result
-
-    def visitCompare(self, node: CompareNode):
-        leftVal = self.getValue(node.left.generateCode(self))
-        rightVal = self.getValue(node.right.generateCode(self))
-        keyword = ""
-        temp = self.richerConversion(leftVal, rightVal)
-        leftVal = temp[0]
-        rightVal = temp[1]
-        floatType = temp[2]
-        if floatType:
-            if node.operation == "<":
-                keyword = "olt"
-            elif node.operation == "<=":
-                keyword = "ole"
-            elif node.operation == "==":
-                keyword = "oeq"
-            elif node.operation == "!=":
-                keyword = "one"
-            elif node.operation == ">=":
-                keyword = "oge"
-            elif node.operation == ">":
-                keyword = "ogt"
-            temp = fcmp(keyword, self.tempVar(), leftVal, rightVal)
-            result = temp[0]
-            self.instructions.append(temp[1])
-        else:
-            if node.operation == "<":
-                keyword = "slt"
-            elif node.operation == "<=":
-                keyword = "sle"
-            elif node.operation == "==":
-                keyword = "eq"
-            elif node.operation == "!=":
-                keyword = "ne"
-            elif node.operation == ">=":
-                keyword = "sge"
-            elif node.operation == ">":
-                keyword = "sgt"
-            temp = icmp(keyword, self.tempVar(), leftVal, rightVal)
-            result = temp[0]
-            self.instructions.append(temp[1])
-        return result
-
-    def visitTerm(self, node: TermNode):
-        leftVal = self.getValue(node.left.generateCode(self))
-        rightVal = self.getValue(node.right.generateCode(self))
-        temp = self.richerConversion(leftVal, rightVal)
-        leftVal = temp[0]
-        rightVal = temp[1]
-        floatType = temp[2]
-        if floatType:
-            if node.operation == "+":
-                temp = fadd(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "-":
-                temp = fsub(self.tempVar(), leftVal, rightVal)
-        else:
-            if node.operation == "+":
-                temp = add(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "-":
-                temp = sub(self.tempVar(), leftVal, rightVal)
-        result = temp[0]
-        self.instructions.append(temp[1])
-        return result
-
-    def visitFactor(self, node: FactorNode):
-        leftVal = self.getValue(node.left.generateCode(self))
-        rightVal = self.getValue(node.right.generateCode(self))
-        temp = self.richerConversion(leftVal, rightVal)
-        leftVal = temp[0]
-        rightVal = temp[1]
-        floatType = temp[2]
-        if floatType:
-            if node.operation == "*":
-                temp = fmul(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "/":
-                temp = fdiv(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "%":
-                toInt = fptosi(self.tempVar(), leftVal)
-                leftVal = toInt[0]
-                self.instructions.append(toInt[1])
-                toInt = fptosi(self.tempVar(), rightVal)
-                rightVal = toInt[0]
-                self.instructions.append(toInt[1])
-                temp = urem(self.tempVar(), leftVal, rightVal)
-        else:
-            if node.operation == "*":
-                temp = mul(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "/":
-                temp = div(self.tempVar(), leftVal, rightVal)
-            elif node.operation == "%":
-                temp = urem(self.tempVar(), leftVal, rightVal)
-        result = temp[0]
-        self.instructions.append(temp[1])
-        return result
-
-    def visitUnary(self, node: UnaryNode):
-        val = node.variable.generateCode(self)
-        if node.operation == "&":
-            val.address = True
-            return val
-        elif node.operation == "*":
-            temp = load(self.tempVar(), val)
-            result = temp[0]
-            self.instructions.append(temp[1])
-            return result
-        val = self.getValue(val)
-        temp = None
-        floatType = False
-        if val.varType == "float":
-            floatType = True
-        if node.operation == "-":
-            if floatType:
-                temp = fneg(self.tempVar(), val)
-            else:
-                temp = neg(self.tempVar(), val)
-        elif node.operation == "!":
-            if floatType:
-                toInt = fptosi(self.tempVar(), val)
-                val = toInt[0]
-                self.instructions.append(toInt[1])
-            temp = xor(self.tempVar(), val, LlvmType("i32", 1))
-        result = temp[0]
-        self.instructions.append(temp[1])
-        return result
-
+    # def visitAssignment(self, node: AssignmentNode):
+    #     variable = node.left.generateCode(self)
+    #
+    #     # implicit conversion
+    #     if node.right.type == "literal" and "float" in variable.varType:
+    #         if node.right.literalType == "int":
+    #             node.right.literalType = "float"
+    #
+    #     result = node.right.generateCode(self)
+    #
+    #     if result.address:
+    #         self.instructions.append(store(result, variable))
+    #         return
+    #     tempResult = result
+    #     result = self.getValue(result)
+    #
+    #     # als result al één of meerdere keren gedereferenced werd, dan zal het niet opnieuw gebeuren
+    #     # in getValue() wat wel moet
+    #     if tempResult == result and result.varType[-1] == "*":
+    #         temp = load(self.tempVar(), result)
+    #         result = temp[0]
+    #         self.instructions.append(temp[1])
+    #     self.instructions.append(store(result, variable))
+    #
+    # def visitLogic(self, node: LogicNode):
+    #     leftVal = self.getValue(node.left.generateCode(self))
+    #     rightVal = self.getValue(node.right.generateCode(self))
+    #     temp = self.richerConversion(leftVal, rightVal)
+    #     leftVal = temp[0]
+    #     rightVal = temp[1]
+    #     floatType = temp[2]
+    #     if floatType:
+    #         if node.operation == "&&":
+    #             temp = fcmpLogic("and", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "||":
+    #             temp = fcmpLogic("or", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
+    #     else:
+    #         if node.operation == "&&":
+    #             temp = logic("and", self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "||":
+    #             temp = logic("or", self.tempVar(), leftVal, rightVal)
+    #     result = temp[0]
+    #     self.instructions.append(temp[1])
+    #     return result
+    #
+    # def visitCompare(self, node: CompareNode):
+    #     leftVal = self.getValue(node.left.generateCode(self))
+    #     rightVal = self.getValue(node.right.generateCode(self))
+    #     keyword = ""
+    #     temp = self.richerConversion(leftVal, rightVal)
+    #     leftVal = temp[0]
+    #     rightVal = temp[1]
+    #     floatType = temp[2]
+    #     if floatType:
+    #         if node.operation == "<":
+    #             keyword = "olt"
+    #         elif node.operation == "<=":
+    #             keyword = "ole"
+    #         elif node.operation == "==":
+    #             keyword = "oeq"
+    #         elif node.operation == "!=":
+    #             keyword = "one"
+    #         elif node.operation == ">=":
+    #             keyword = "oge"
+    #         elif node.operation == ">":
+    #             keyword = "ogt"
+    #         temp = fcmp(keyword, self.tempVar(), leftVal, rightVal)
+    #         result = temp[0]
+    #         self.instructions.append(temp[1])
+    #     else:
+    #         if node.operation == "<":
+    #             keyword = "slt"
+    #         elif node.operation == "<=":
+    #             keyword = "sle"
+    #         elif node.operation == "==":
+    #             keyword = "eq"
+    #         elif node.operation == "!=":
+    #             keyword = "ne"
+    #         elif node.operation == ">=":
+    #             keyword = "sge"
+    #         elif node.operation == ">":
+    #             keyword = "sgt"
+    #         temp = icmp(keyword, self.tempVar(), leftVal, rightVal)
+    #         result = temp[0]
+    #         self.instructions.append(temp[1])
+    #     return result
+    #
+    # def visitTerm(self, node: TermNode):
+    #     leftVal = self.getValue(node.left.generateCode(self))
+    #     rightVal = self.getValue(node.right.generateCode(self))
+    #     temp = self.richerConversion(leftVal, rightVal)
+    #     leftVal = temp[0]
+    #     rightVal = temp[1]
+    #     floatType = temp[2]
+    #     if floatType:
+    #         if node.operation == "+":
+    #             temp = fadd(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "-":
+    #             temp = fsub(self.tempVar(), leftVal, rightVal)
+    #     else:
+    #         if node.operation == "+":
+    #             temp = add(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "-":
+    #             temp = sub(self.tempVar(), leftVal, rightVal)
+    #     result = temp[0]
+    #     self.instructions.append(temp[1])
+    #     return result
+    #
+    # def visitFactor(self, node: FactorNode):
+    #     leftVal = self.getValue(node.left.generateCode(self))
+    #     rightVal = self.getValue(node.right.generateCode(self))
+    #     temp = self.richerConversion(leftVal, rightVal)
+    #     leftVal = temp[0]
+    #     rightVal = temp[1]
+    #     floatType = temp[2]
+    #     if floatType:
+    #         if node.operation == "*":
+    #             temp = fmul(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "/":
+    #             temp = fdiv(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "%":
+    #             toInt = fptosi(self.tempVar(), leftVal)
+    #             leftVal = toInt[0]
+    #             self.instructions.append(toInt[1])
+    #             toInt = fptosi(self.tempVar(), rightVal)
+    #             rightVal = toInt[0]
+    #             self.instructions.append(toInt[1])
+    #             temp = urem(self.tempVar(), leftVal, rightVal)
+    #     else:
+    #         if node.operation == "*":
+    #             temp = mul(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "/":
+    #             temp = div(self.tempVar(), leftVal, rightVal)
+    #         elif node.operation == "%":
+    #             temp = urem(self.tempVar(), leftVal, rightVal)
+    #     result = temp[0]
+    #     self.instructions.append(temp[1])
+    #     return result
+    #
+    # def visitUnary(self, node: UnaryNode):
+    #     val = node.variable.generateCode(self)
+    #     if node.operation == "&":
+    #         val.address = True
+    #         return val
+    #     elif node.operation == "*":
+    #         temp = load(self.tempVar(), val)
+    #         result = temp[0]
+    #         self.instructions.append(temp[1])
+    #         return result
+    #     val = self.getValue(val)
+    #     temp = None
+    #     floatType = False
+    #     if val.varType == "float":
+    #         floatType = True
+    #     if node.operation == "-":
+    #         if floatType:
+    #             temp = fneg(self.tempVar(), val)
+    #         else:
+    #             temp = neg(self.tempVar(), val)
+    #     elif node.operation == "!":
+    #         if floatType:
+    #             toInt = fptosi(self.tempVar(), val)
+    #             val = toInt[0]
+    #             self.instructions.append(toInt[1])
+    #         temp = xor(self.tempVar(), val, LlvmType("i32", 1))
+    #     result = temp[0]
+    #     self.instructions.append(temp[1])
+    #     return result
+    #
     def visitTypeCast(self, node: TypeCastNode):
-        value = self.getValue(node.variable.generateCode(self))
+        register = node.variable.generateCode(self)
         cast = node.castTo
-        newValue = None
-        if cast == "float" and value.varType != "float":
-            conversion = sitofp(self.tempVar(), value)
-            value = conversion[0]
-            self.instructions.append(conversion[1])
-        elif cast != "float" and value.varType == "float":
-            conversion = fptosi(self.tempVar(), value)
-            value = conversion[0]
-            self.instructions.append(conversion[1])
-        if ((cast == "float" and value.varType == "float") or
-                (cast == "int" and value.varType == "i32") or
-                (cast == "char" and value.varType == "i8") or
-                (cast == "bool" and value.varType == "i1")):
-            newValue = value
-        elif cast != value.varType:
-            conversion = None
-            if cast == "int":
-                conversion = zext(self.tempVar(), value, "i32")
-            elif cast == "char":
-                if value.varType == "i32":
-                    conversion = trunc(self.tempVar(), value, "i8")
-                elif value.varType == "i1":
-                    conversion = zext(self.tempVar(), value, "i8")
-            elif cast == "bool":
-                conversion = trunc(self.tempVar(), value, "i1")
-            newValue = conversion[0]
-            self.instructions.append(conversion[1])
+        newRegister = Register()
+        if cast == "float" and register.type != "f":
+            newRegister.assign(self.freg, "f")
+            self.freg += 1
+            if register.type == "t":
+                self.treg -= 1
+            elif register.type == "s":
+                self.sreg -= 1
+            instruction = convert_int_to_float(newRegister, register)
+        elif cast != "float" and register.type == "f":
+            newRegister.assign(self.treg, "t")
+            self.freg -= 1
+            self.treg += 1
+            instruction = convert_float_to_int(newRegister, register)
+        else:
+            newRegister = register
+            instruction = ""
 
-        return newValue
+        self.text.append(instruction)
+        return newRegister
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
         register = node.variable.generateCode(self)
-        temp = None
+        instruction = None
         floatType = (register.type == "f")
         if node.operation == "++":
             if floatType:
-                temp = fadd(self.tempVar(), val, LlvmType("float", 1))
+                tempRegister = Register()
+                tempRegister.assign(self.freg, "f")
+                self.text.append(tempRegister.load(1))
+                instruction = add(register, register, tempRegister)
             else:
-                temp = add(self.tempVar(), val, LlvmType("i32", 1))
+                instruction = addi(register, register, 1)
         elif node.operation == "--":
             if floatType:
-                temp = fsub(self.tempVar(), val, LlvmType("float", 1))
+                tempRegister = Register()
+                tempRegister.assign(self.freg, "f")
+                self.text.append(tempRegister.load(1))
+                instruction = sub(register, register, tempRegister)
             else:
-                temp = sub(self.tempVar(), val, LlvmType("i32", 1))
-        result = temp[0]
-        self.text.append(temp[1])
-        return result
+                instruction = subi(register, register, 1)
+        self.text.append(instruction)
+        return register
 
     def visitReturn(self, node:ReturnNode):
         type = node.returnValue # Is een Variable, Literal, Term, Function call, ...
