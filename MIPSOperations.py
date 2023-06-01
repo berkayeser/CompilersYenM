@@ -156,5 +156,31 @@ def neg(dest, src):
     else:
         return f"neg {dest}, {src}"
 
+
 def logical_not(dest, src):
     return f"xori {dest}, {src}, 1"
+
+
+def multiply(dest, src1, src2):
+    if dest.type == "f":
+        return f"mul.s {dest}, {src1}, {src2}"
+    else:  # Assuming data_type is "int"
+        return f"mul {dest}, {src1}, {src2}"
+
+
+def divide(dest, src1, src2):
+    if dest.type == "f":
+        return f"div.s {src1}, {src2}\n" \
+               f"mov.s {dest}, $f0"
+    else:  # Assuming data_type is "int"
+        return f"div {src1}, {src2}\n" \
+               f"mflo {dest}"
+
+
+def modulo(dest, src1, src2):
+    if dest.type == "f":
+        return f"rem.s {src1}, {src2}\n" \
+               f"mov.s {dest}, {src1}"
+    else:  # Assuming data_type is "int"
+        return f"div {src1}, {src2}\n" \
+               f"mfhi {dest}"

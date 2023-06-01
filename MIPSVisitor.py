@@ -283,37 +283,28 @@ class MIPSVisitor:
     #     self.instructions.append(temp[1])
     #     return result
     #
-    # def visitFactor(self, node: FactorNode):
-    #     leftVal = self.getValue(node.left.generateCode(self))
-    #     rightVal = self.getValue(node.right.generateCode(self))
-    #     temp = self.richerConversion(leftVal, rightVal)
-    #     leftVal = temp[0]
-    #     rightVal = temp[1]
-    #     floatType = temp[2]
-    #     if floatType:
-    #         if node.operation == "*":
-    #             temp = fmul(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "/":
-    #             temp = fdiv(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "%":
-    #             toInt = fptosi(self.tempVar(), leftVal)
-    #             leftVal = toInt[0]
-    #             self.instructions.append(toInt[1])
-    #             toInt = fptosi(self.tempVar(), rightVal)
-    #             rightVal = toInt[0]
-    #             self.instructions.append(toInt[1])
-    #             temp = urem(self.tempVar(), leftVal, rightVal)
-    #     else:
-    #         if node.operation == "*":
-    #             temp = mul(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "/":
-    #             temp = div(self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "%":
-    #             temp = urem(self.tempVar(), leftVal, rightVal)
-    #     result = temp[0]
-    #     self.instructions.append(temp[1])
-    #     return result
-    #
+    def visitFactor(self, node: FactorNode):
+        lRegister = node.left.generateMips(self)
+        rRegister = node.right.generateMips(self)
+        temp = self.richerConversion(lRegister, rRegister)
+        lRegister = temp[0]
+        rRegister = temp[1]
+        if rRegister.type == "f":
+            self.freg -= 1
+        elif rRegister.type == "s":
+            self.sreg -= 1
+        else:
+            self.treg -= 1
+        instruction = ""
+        if node.operation == "*":
+            instruction = multiply(lRegister, lRegister, rRegister)
+        elif node.operation == "/":
+            instruction = divide(lRegister, lRegister, rRegister)
+        elif node.operation == "%":
+            instruction = modulo(lRegister, lRegister, rRegister)
+        self.text.append(instruction)
+        return lRegister
+
     def visitUnary(self, node: UnaryNode):
         register = node.variable.generateMips(self)
         # if node.operation == "&":
@@ -415,6 +406,30 @@ class MIPSVisitor:
 
         # In dit blok wordt de return ook verwerkt
         self.visitBlock(node.block)
+
+    def richerConversion(self, lRegister, rRegister):
+        floatType = lRegister.type == "float" or rRegister.type == "float"
+        newRegister = Register()
+        if (lRegister.type == "float" or rRegister.type == "float") and lRegister.type != rRegister.type:
+            if rRegister.type != "f":
+                newRegister.assign(self.freg, "f")
+                self.freg += 1
+                if rRegister.type == "t":
+                    self.treg -= 1
+                elif rRegister.type == "s":
+                    self.sreg -= 1
+                self.text.append(convert_int_to_float(newRegister, rRegister))
+                rRegister = newRegister
+            elif lRegister.type != "f":
+                newRegister.assign(self.freg, "f")
+                self.freg += 1
+                if lRegister.type == "t":
+                    self.treg -= 1
+                elif lRegister.type == "s":
+                    self.sreg -= 1
+                self.text.append(convert_int_to_float(newRegister, lRegister))
+                lRegister = newRegister
+        return lRegister, rRegister
 
     def visitBlock(self, node: BlockNode):
         for statement in node.children:
