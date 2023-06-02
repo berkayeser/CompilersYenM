@@ -428,11 +428,11 @@ class MIPSVisitor:
             statement.generateMips(self)
 
     def visitStatement(self, node: StatementNode):
-        for statement in node.children:
-            statement.generateMips(self)
+        node.statement.generateMips(self)
 
     def visitExpressionStatement(self, node: ExpressionStatementNode):
-        pass
+        for statement in node.children:
+            statement.generateMips(self)
 
 
     def includeStdio(self):
