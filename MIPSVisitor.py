@@ -198,30 +198,22 @@ class MIPSVisitor:
     #         result = temp[0]
     #         self.instructions.append(temp[1])
     #     self.instructions.append(store(result, variable))
-    #
-    # def visitLogic(self, node: LogicNode):
-    #     leftVal = self.getValue(node.left.generateCode(self))
-    #     rightVal = self.getValue(node.right.generateCode(self))
-    #     temp = self.richerConversion(leftVal, rightVal)
-    #     leftVal = temp[0]
-    #     rightVal = temp[1]
-    #     floatType = temp[2]
-    #     if floatType:
-    #         if node.operation == "&&":
-    #             temp = fcmpLogic("and", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "||":
-    #             temp = fcmpLogic("or", self.tempVar(), self.tempVar(), self.tempVar(), leftVal, rightVal)
-    #     else:
-    #         if node.operation == "&&":
-    #             temp = logic("and", self.tempVar(), leftVal, rightVal)
-    #         elif node.operation == "||":
-    #             temp = logic("or", self.tempVar(), leftVal, rightVal)
-    #     result = temp[0]
-    #     self.instructions.append(temp[1])
-    #     return result
-    #
 
-    # TODO: check if I free the registers after operations
+    def visitLogic(self, node: LogicNode):
+        lRegister = node.left.generateMips(self)
+        rRegister = node.right.generateMips(self)
+        temp = self.poorerConversion(lRegister, rRegister)
+        lRegister = temp[0]
+        rRegister = temp[1]
+        instruction = ""
+        if node.operation == "&&":
+            instruction = logical_and(lRegister, lRegister, rRegister)
+        elif node.operation == "||":
+            instruction = logical_or(lRegister, lRegister, rRegister)
+        self.treg -= 1
+        self.text.append(instruction)
+        return lRegister
+
 
     def visitCompare(self, node: CompareNode):
         lRegister = node.left.generateMips(self)
@@ -236,6 +228,12 @@ class MIPSVisitor:
             self.text.append(tempRegister.load(1))
         instruction = compare(node.operation, lRegister, lRegister, rRegister, tempRegister)
         self.text.append(instruction)
+        if rRegister.type == "f":
+            self.freg -= 1
+        elif rRegister.type == "s":
+            self.sreg -= 1
+        else:
+            self.treg -= 1
         return lRegister
 
     def visitTerm(self, node: TermNode):
@@ -384,7 +382,6 @@ class MIPSVisitor:
         self.visitBlock(node.block)
 
     def richerConversion(self, lRegister, rRegister):
-        floatType = lRegister.type == "float" or rRegister.type == "float"
         newRegister = Register()
         if (lRegister.type == "float" or rRegister.type == "float") and lRegister.type != rRegister.type:
             if rRegister.type != "f":
@@ -404,6 +401,23 @@ class MIPSVisitor:
                 elif lRegister.type == "s":
                     self.sreg -= 1
                 self.text.append(convert_int_to_float(newRegister, lRegister))
+                lRegister = newRegister
+        return lRegister, rRegister
+
+    def poorerConversion(self, lRegister, rRegister):
+        newRegister = Register()
+        if (lRegister.type == "float" or rRegister.type == "float") and lRegister.type != rRegister.type:
+            if rRegister.type == "f":
+                newRegister.assign(self.freg, "t")
+                self.treg += 1
+                self.freg -= 1
+                self.text.append(convert_float_to_int(newRegister, rRegister))
+                rRegister = newRegister
+            elif lRegister.type == "f":
+                newRegister.assign(self.freg, "t")
+                self.treg += 1
+                self.freg -= 1
+                self.text.append(convert_float_to_int(newRegister, lRegister))
                 lRegister = newRegister
         return lRegister, rRegister
 

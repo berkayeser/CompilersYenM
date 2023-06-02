@@ -232,3 +232,13 @@ def compare(dest, op, src1, src2, temp=None):
             return f"sne {dest}, {src1}, {src2}"
         else:
             raise ValueError("Invalid comparison operator")
+
+
+# no flaots
+def logical_and(dest, src1, src2):
+        return f"and $t{dest}, $t{src1}, $t{src2}"
+
+
+# no floats
+def logical_or(dest, src1, src2):
+        return f"or $t{dest}, $t{src1}, $t{src2}"
