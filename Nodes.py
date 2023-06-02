@@ -198,6 +198,7 @@ class BlockNode(Node):
 
 
 class StatementNode(Node):
+    # Een statementNode heeft altijd maximum 1 kind
     type = "line"
     statement = None
     comment = None
@@ -206,7 +207,8 @@ class StatementNode(Node):
         return llvm.visitLine(self)
 
     def generateMips(self, mips):
-        self.comment.generateMips(mips)
+        if self.comment:
+            self.comment.generateMips(mips)
         self.statement.generateMips(mips)
 
 

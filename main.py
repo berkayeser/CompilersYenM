@@ -58,7 +58,7 @@ def main(argv):
                 except Exception as error:
                      print(error, flush=True)
 
-                print("\n",flush=True)
+                print(flush=True)
             else:
                 raise Exception(f"{file_path} not found.")
 

@@ -16,7 +16,8 @@ class MIPSVisitor:
         self.symbolTable: SymbolTable = SymbolTable([0])
         # block labels
         self.blocks = []
-        self.cur_new_label = "L"
+        self.if_label: int = -1
+        self.while_label: int = -1
 
 
 
@@ -34,17 +35,26 @@ class MIPSVisitor:
             file.write(text + '\n')
         file.close()
 
-    def increase_label(self):
-        integer = int(self.cur_new_label[1:])
-        self.cur_new_label = "L" + str(integer + 1)
+    def increase_if_label(self) -> str:
+        self.if_label = self.if_label + 1
+        new_index: int = self.if_label
+        return "IF_" + str(new_index)
+
+    def increase_while_label(self) -> str:
+        self.while_label = self.while_label + 1
+        new_index: int = self.while_label
+        return "WHILE_" + str(new_index)
 
     def visitIf(self, node: IfNode):
-        self.increase_label()
-        else_label = self.cur_new_label
+        else_label = self.increase_if_label()
 
         # First parse Node Condition
         nc = node.condition
-        #TODO De TermNode in de condition nog omzetten naar MIPS
+        if nc.type == "term":
+            nc = nc.operator
+        else:
+            print("error56")
+
         parsed_nc: list[str] = handle_condition_if(nc, else_label) # Parsed Node Condition
 
         # nc = Als de conditie niet waar is, springen we over het 'if' block:
@@ -59,14 +69,14 @@ class MIPSVisitor:
         else_node = False
         if node.elseNode:
             else_node = True
-            self.increase_label()
-            next_label: str = self.cur_new_label
+            next_label: str = self.increase_if_label()
             self.text.append("j " + next_label)
 
         # Now parse Else block
         self.text.append(else_label + ": ")
         if else_node:
             self.visitBlock(node.elseNode.block)
+            self.text.append(next_label + ":")
 
 
     def visitWhile(self, node: WhileNode):
@@ -74,31 +84,29 @@ class MIPSVisitor:
         block = node.block
 
         # Start of While block
-        self.increase_label()
-        while_label: str = self.cur_new_label
-        self.instructions.append(while_label + ": ")
+        while_label: str = self.increase_while_label()
+        self.text.append(while_label + ": ")
 
         # Parse Condition
-        self.increase_label()
-        done_label: str = self.cur_new_label
+        done_label: str = self.increase_while_label()
         parsed_condition = handle_condition_if(condition, done_label)
 
         for i in parsed_condition:
-            self.instructions.append(i)
+            self.text.append(i)
 
         # Parse While block
         self.visitBlock(block)
 
         # At end of while block, jump back to begin of While
-        self.instructions.append("j " + while_label)
+        self.text.append("j " + while_label)
 
     def visitInstantiation(self, node: InstantiationNode, global_var):
         if global_var:
             variable = self.declareGlobal(node.name, node.varType)
+            self.symbolTable.add_symbol(variable.name, variable.type)
         else:
             variable = self.declareLocal(node.varType)
 
-        self.symbolTable.add_symbol(variable.name, variable.type)
 
         return variable
 
@@ -191,7 +199,7 @@ class MIPSVisitor:
             if node.right.literalType == "int":
                 node.right.literalType = "float"
 
-        result = self.getValue(node.right.generateCode(self))
+        result = self.getValue(node.right.generateMips(self))
 
         # conversion
         newRegister = Register()
@@ -422,6 +430,9 @@ class MIPSVisitor:
         # Tenslotte " jr $ra "
         self.text.append("jr $ra")
 
+    def visitBreak(self, node: BreakNode):
+        pass
+
 
     def visitFunction(self, node: FunctionNode):
         declaration = node.declaration
@@ -488,5 +499,6 @@ class MIPSVisitor:
         pass
 
     def visitComment(self, node: CommentNode):
-        pass
+        self.text.append(node.text)
+
 
