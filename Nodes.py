@@ -206,7 +206,8 @@ class StatementNode(Node):
         return llvm.visitLine(self)
 
     def generateMips(self, mips):
-        return mips.visitStatement(self)
+        self.comment.generateMips(mips)
+        self.statement.generateMips(mips)
 
 
 class IfNode(Node):
