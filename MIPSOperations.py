@@ -10,7 +10,7 @@ class Register:
         self.register = register_nr
         self.type = type1
 
-    def load(self, value, register_nr=0):
+    def save(self, value, register_nr=0):
         if self.type == "f":
             return f"li $t{register_nr}, {value}\n" \
                    f"mtc1 $t{register_nr}, $f{self.register}"
@@ -18,6 +18,13 @@ class Register:
             return f"li $s{self.register}, {value}"
         else:
             return f"li $t{self.register}, {value}"
+
+    def load(self, register_nr=0):
+        if self.type == "f":
+            return f"mfc1 $t{register_nr}, {self}" \
+                   f"l.s {self}, 0($t{register_nr})", self
+        return f"lw {self}, 0({self})", self
+
 
     def __repr__(self):
         return f"${self.type}{self.register}"
@@ -31,13 +38,21 @@ class Local(Register):
     def loadLocal(self, register_nr, sp):
         newRegister = Register()
         if self.type == "float":
-            instruction = f"l.s $f{register_nr}, {sp - self.offset}($sp)"
+            newType = "f"
+            instruction = f"l.s $f{register_nr}, {self.offset - sp}($sp)"
         elif self.type == "byte":
-            instruction = f"lb $t{register_nr}, {sp - self.offset}($sp)"
+            newType = "t"
+            instruction = f"lb $t{register_nr}, {self.offset - sp}($sp)"
         else:
-            instruction = f"lw $t{register_nr}, {sp - self.offset}($sp)"
+            newType = "t"
+            instruction = f"lw $t{register_nr}, {self.offset - sp}($sp)"
 
-        return instruction, newRegister.assign(register_nr, self.type)
+        return instruction, newRegister.assign(register_nr, newType)
+
+    def loadAddress(self, register_nr, sp):
+        newRegister = Register()
+        instruction = f"addi $t{register_nr}, $sp, {self.offset - sp}"
+        return instruction, newRegister.assign(register_nr, "t")
 
 class Global(Register):
     def __init__(self, name, type):
@@ -47,13 +62,21 @@ class Global(Register):
     def loadGlobal(self, register_nr):
         newRegister = Register()
         if self.type == "float":
+            newType = "f"
             instruction = f"l.s $f{register_nr}, {self.name}"
         elif self.type == "byte":
+            newType = "t"
             instruction = f"lb $t{register_nr}, {self.name}"
         else:
+            newType = "t"
             instruction = f"lw $t{register_nr}, {self.name}"
 
-        return instruction, newRegister.assign(register_nr, self.type)
+        return instruction, newRegister.assign(register_nr, newType)
+
+    def loadAdress(self, register_nr):
+        newRegister = Register()
+        instruction = f"la $t{register_nr}, {self.name}"
+        return instruction, newRegister.assign(register_nr, "t")
 
 def handle_condition(self ,var1, var2, operator :str) -> str:
     string :str = ""
@@ -161,6 +184,7 @@ def neg(dest, src):
 def logical_not(dest, src):
     return f"xori {dest}, {src}, 1"
 
+# TODO: check if correct
 
 def multiply(dest, src1, src2):
     if dest.type == "f":
@@ -242,3 +266,17 @@ def logical_and(dest, src1, src2):
 # no floats
 def logical_or(dest, src1, src2):
         return f"or $t{dest}, $t{src1}, $t{src2}"
+
+
+def storeGlobal(destination: Global, register):
+    if destination.type == "float":
+        return f"s.s {register}, {destination.name}"
+    else:
+        return f"sw {register}, {destination.name}"
+
+
+def storeLocal(destination: Local, register, sp):
+    if destination.type == "float":
+        return f"s.s {register}, {destination.offset - sp}($sp)"
+    else:
+        return f"sw {register}, {destination.offset - sp}($sp)"
