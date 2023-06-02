@@ -28,8 +28,10 @@ class MIPSVisitor:
 
         # write result to file
         file = open(self.file, "w")
-        for instruction in self.text:
-            file.write(instruction + '\n')
+        for data in self.data:
+            file.write(data + '\n')
+        for text in self.text:
+            file.write(text + '\n')
         file.close()
 
     def increase_label(self):
@@ -426,7 +428,12 @@ class MIPSVisitor:
             statement.generateMips(self)
 
     def visitStatement(self, node: StatementNode):
+        for statement in node.children:
+            statement.generateMips(self)
+
+    def visitExpressionStatement(self, node: ExpressionStatementNode):
         pass
+
 
     def includeStdio(self):
         pass
@@ -434,4 +441,3 @@ class MIPSVisitor:
     def visitComment(self, node: CommentNode):
         pass
 
-    #def visitLine(self, node:StatementNode):

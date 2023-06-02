@@ -251,7 +251,7 @@ class WhileNode(Node):
 
 class ExpressionStatementNode(Node):
     type = "statement"
-    instruction = ""
+    instruction = "" # str
 
     def getASTvalue(self):
         return self.instruction
