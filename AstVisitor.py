@@ -727,8 +727,6 @@ class AstVisitor(CVisitor):
         node.instruction = ctx.getText()
         if ctx.assignment():
             node.children = [self.visitAssignment(ctx.assignment())]
-        elif ctx.declaration():
-            node.children = [self.visitDeclaration(ctx.declaration())]
         elif ctx.logicexpression():
             node.children = [self.visitLogicexpression(ctx.logicexpression())]
         # added instantiationExpression

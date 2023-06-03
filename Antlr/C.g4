@@ -58,7 +58,6 @@ compound_statement
 
 expression_statement
     : assignment
-    | declaration
     | logicexpression
     | instantiationExpression;
 
