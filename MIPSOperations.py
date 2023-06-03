@@ -78,6 +78,49 @@ class Global(Register):
         instruction = f"la $t{register_nr}, {self.name}"
         return instruction, newRegister.assign(register_nr, "t")
 
+class GlobalArray(Register):
+    def __init__(self, name, type, size, arraySize):
+        self.name = name
+        self.type = type
+        self.size = size
+        self.arraySize = arraySize
+
+    def loadGlobal(self, register_nr, index):
+        newRegister = Register()
+        if self.type == "float":
+            newType = "f"
+            instruction = f"l.s $f{register_nr}, {self.name}({index})"
+        elif self.type == "byte":
+            newType = "t"
+            instruction = f"lb $t{register_nr}, {self.name}({index})"
+        else:
+            newType = "t"
+            instruction = f"lw $t{register_nr}, {self.name}({index})"
+
+        return instruction, newRegister.assign(register_nr, newType)
+
+class LocalArray(Register):
+    def __init__(self, offset, type, size, arraySize):
+        self.offset = offset
+        self.type = type
+        # size is 1 or 4 (byte or int/float)
+        self.size = size
+        self.arraySize = arraySize
+
+    def loadLocal(self, register_nr, index):
+        newRegister = Register()
+        if self.type == "float":
+            newType = "f"
+            instruction = f"l.s $f{register_nr}, ({index})"
+        elif self.type == "byte":
+            newType = "t"
+            instruction = f"lb $t{register_nr}, ({index})"
+        else:
+            newType = "t"
+            instruction = f"lw $t{register_nr}, ({index})"
+
+        return instruction, newRegister.assign(register_nr, newType)
+
 def handle_condition(self ,var1, var2, operator :str) -> str:
     string :str = ""
     if operator   == "==":
@@ -211,34 +254,32 @@ def modulo(dest, src1, src2):
                f"mfhi {dest}"
 
 
+# assuming one is stored in temp
 def compare(dest, op, src1, src2, temp=None):
     if dest.type == "f":
+        instruction = ""
         if op == "<":
-            return f"c.lt.s {src1}, {src2}\n" \
-                   f"movt {dest}, {temp}\n" \
-                   f"movf {dest}, $zero"
+            instruction = f"c.lt.s {src1}, {src2}\n" \
+                   f"movf {temp}, $zero"
         elif op == ">":
-            return f"c.lt.s {src2}, {src1}\n" \
-                   f"movt {dest}, {temp}\n" \
-                   f"movf {dest}, $zero"
+            instruction = f"c.lt.s {src2}, {src1}\n" \
+                   f"movf {temp}, $zero"
         elif op == "<=":
-            return f"c.le.s {src1}, {src2}\n" \
-                   f"movt {dest}, {temp}\n" \
-                   f"movf {dest}, $zero"
+            instruction = f"c.le.s {src1}, {src2}\n" \
+                   f"movf {temp}, $zero"
         elif op == ">=":
-            return f"c.le.s {src2}, {src1}\n" \
-                   f"movt {dest}, {temp}\n" \
-                   f"movf {dest}, $zero"
+            instruction = f"c.le.s {src2}, {src1}\n" \
+                   f"movf {temp}, $zero"
         elif op == "==":
-            return f"c.eq.s {src1}, {src2}\n" \
-                   f"movt {dest}, {temp}\n" \
-                   f"movf {dest}, $zero"
+            instruction = f"c.eq.s {src1}, {src2}\n" \
+                   f"movf {temp}, $zero"
         elif op == "!=":
-            return f"c.eq.s {src1}, {src2}\n" \
-                   f"movt {dest}, $zero\n" \
-                   f"movf {dest}, {temp}"
+            instruction = f"c.eq.s {src1}, {src2}\n" \
+                   f"movt {temp}, $zero"
         else:
             raise ValueError("Invalid comparison operator")
+        instruction += f"\nmtc1 {temp}, {src1}"
+        return instruction
     else:
         if op == "<":
             return f"slt {dest}, {src1}, {src2}"

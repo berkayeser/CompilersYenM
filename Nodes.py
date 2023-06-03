@@ -170,18 +170,6 @@ class ReturnNode(Node):
         return mips.visitReturn(self)
 
 
-
-class PrintNode(Node):
-    type = "print"
-    toPrint = ""
-
-    def generateLlvm(self, llvm):
-        return llvm.visitPrint(self)
-
-    def generateMips(self, mips):
-        return mips.visitPrint(self)
-
-
 class BlockNode(Node):
     type = "block"
     # all code inside
@@ -209,7 +197,8 @@ class StatementNode(Node):
     def generateMips(self, mips):
         if self.comment:
             self.comment.generateMips(mips)
-        self.statement.generateMips(mips)
+        if self.statement:
+            self.statement.generateMips(mips)
 
 
 class IfNode(Node):
@@ -330,11 +319,17 @@ class ArrayInstantiationNode(Node):
     varType = ""
     const = ""
 
+    def generateMips(self, mips):
+        mips.visitArrayInstantiation(self)
+
 
 class ArrayNode(Node):
     type = "array"
     name = ""
     index = None
+
+    def generateMips(self, mips):
+        mips.visitArray(self)
 
 
 class LogicNode(Node):

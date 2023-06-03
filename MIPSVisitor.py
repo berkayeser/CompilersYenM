@@ -11,7 +11,7 @@ class MIPSVisitor:
         self.treg = 0
         self.freg = 0
         self.sreg = 0
-        self.sp = 0
+        self.sp = 2147479548
         self.fp = 0
         self.symbolTable: SymbolTable = SymbolTable([0])
         # block labels
@@ -107,6 +107,17 @@ class MIPSVisitor:
         else:
             variable = self.declareLocal(node.varType)
 
+        # TODO: self.symbolTable.add_symbol(variable.name, variable.type)
+
+        return variable
+
+    def visitArrayInstantiation(self, node: ArrayInstantiationNode, global_var):
+        if global_var:
+            variable = self.declareGlobalArray(node.name, node.type, node.size)
+        else:
+            variable = self.declareLocalArray(node.type, node.size)
+
+        # TODO: self.symbolTable.add_symbol(variable.name, variable.type)
 
         return variable
 
@@ -124,26 +135,52 @@ class MIPSVisitor:
         self.data.append(f"{name}: .{type} 0")
         return Global(name, type)
 
+    def declareGlobalArray(self, name, type, size):
+        singleSize = 0
+        if type == "int" or type == "bool":
+            singleSize = 4
+            type = "word"
+        elif type == "char":
+            singleSize = 1
+            type = "byte"
+        elif "float" in type:
+            singleSize = 4
+            type = "float"
+        self.data.append(f"{name}: .space {size * singleSize}")
+        return GlobalArray(name, type, singleSize, size)
+
     def declareLocal(self, type):
         size = 0
         if type == "int" or type == "bool":
-            self.sp -= 4
             size = 4
             type = "word"
         elif type == "char":
-            self.sp -= 1
             size = 1
             type = "byte"
         elif "float" in type:
-            self.sp -= 4
             size = 4
             type = "float"
         elif "*" in type:
-            self.sp -= 4
             size = 4
             type = "word"
+        self.sp -= size
         self.text.append(f"addi $sp, $sp, -{size}")
         return Local(self.sp, type)
+
+    def declareLocalArray(self, type, size):
+        singleSize = 0
+        if type == "int" or type == "bool":
+            singleSize = 4
+            type = "word"
+        elif type == "char":
+            singleSize = 1
+            type = "byte"
+        elif "float" in type:
+            singleSize = 4
+            type = "float"
+        self.sp -= size * singleSize
+        self.text.append(f"addi $sp, $sp, -{size * singleSize}")
+        return LocalArray(self.sp, type, singleSize, size)
 
     def visitVariable(self, node: VariableNode):
         return self.symbolTable.get_symbol(node.name)
@@ -392,6 +429,8 @@ class MIPSVisitor:
         self.text.append(instruction)
         return newRegister
 
+    # TODO: needs to change actual value
+
     def visitSpecialUnary(self, node: SpecialUnaryNode):
         register = self.getValue(node.variable.generateMips(self))
         instruction = None
@@ -414,6 +453,36 @@ class MIPSVisitor:
                 instruction = subi(register, register, 1)
         self.text.append(instruction)
         return register
+
+    def visitArray(self, node: ArrayNode):
+        array = self.symbolTable.get_symbol(node.name)
+        # Has to be int (t register)
+        index = self.getValue(node.index.generateMips(self))
+        result = None
+        if isinstance(array, GlobalArray):
+            if array.type == "float":
+                result = array.loadGlobal(self.freg, index)
+                self.freg += 1
+            else:
+                result = array.loadGlobal(index.register, index)
+
+        # (self.offset - sp) + index * self.size
+        elif isinstance(array, LocalArray):
+            temRegister = Register()
+            temRegister.assign(self.treg, "t")
+            self.text.append(temRegister.save(array.size))
+            self.text.append(multiply(index, index, temRegister))
+            self.text.append(temRegister.save(array.offset))
+            self.text.append(subi(temRegister, temRegister, self.sp))
+            self.text.append(add(index, index, temRegister))
+            if array.type == "float":
+                result = array.loadLocal(self.freg, index)
+                self.freg += 1
+            else:
+                result = array.loadLocal(index.register, index)
+
+        self.text.append(result[0])
+        return result[1]
 
     def visitReturn(self, node:ReturnNode):
         type = node.returnValue # Is een Variable, Literal, Term, Function call, ...
@@ -499,6 +568,6 @@ class MIPSVisitor:
         pass
 
     def visitComment(self, node: CommentNode):
-        self.text.append(node.text)
+        self.text.append("# " + node.text)
 
 
