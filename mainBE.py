@@ -4,13 +4,12 @@ from Antlr.CLexer import CLexer
 from AstVisitor import *
 from AST import AST
 from AstOptimizer import AstOptimizer
-from LLVMVisitor import LLVMVisitor
 from MIPSVisitor import *
 
 # Test script that automatically runs our Compiler on specified C files.
 # Just run "python3 main.py"
 
-def main(argv):
+def main():
     vis_tree_flag: bool = True
     vis_st_flag: bool = False
 
@@ -22,7 +21,7 @@ def main(argv):
         os.mkdir('tests/output/ast_files') # Maak een folder genaamd 'output' aan
         os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
-    tests_directory_path = "tests/alle_projecten"
+    tests_directory_path = "tests/projecten_4"
     asm_directory_path = "tests/output/asm_files"
 
     for foldername in os.listdir(tests_directory_path):
@@ -64,4 +63,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

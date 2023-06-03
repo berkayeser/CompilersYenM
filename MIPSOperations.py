@@ -148,7 +148,7 @@ def handle_condition(self ,var1, var2, operator :str) -> str:
     elif operator == ">=":
         string = "bge $t0, $t1, then"
     else:
-        print("error")
+        print("error151")
 
     return string
 
@@ -171,9 +171,34 @@ def handle_condition_if(operator:str, label:str) -> list[str]:
         elif operator == ">=":
             string = "blt $t0, $t1, " + label
         else:
-            print("error")
+            print("error174" + str(operator))
 
         return [string]
+
+
+# Parse a string for Printf
+def parse_string(string: str, argument: list[ArgumentNode]) -> str:
+    parsed: str = "\""
+
+    ctr: int = 0
+    for i in range(0, len(string)):
+        if string[i-1] == "%":
+            continue
+        if string[i] == "%":
+            a = argument[ctr].value
+            if isinstance(a, str):
+                parsed += a
+            elif a.type == "literal":
+                parsed += a.value
+            elif a.type == "variable":
+                print("errorVar")
+            else:
+                print("errorElse")
+            ctr += 1
+        else:
+            parsed += string[i]
+    parsed += "\""
+    return parsed
 
 
 def float_to_64bit_hex(x):

@@ -76,6 +76,8 @@ class SymbolTable:
         elif errortype == "unint":
             raise Exception(f"Syntax Error; Symbol '{name}' is uninitialized")
         else:
+            print(f"\nGet Symbol Error: {name} , {input_scope} , {errortype}, {self.scope1} ")
+            print(f"{self.parentScope.scope1}")
             scope.st_print()
             raise Exception(f"Symbol '{name}' is ?????????")
 
@@ -115,8 +117,6 @@ class SymbolTable:
             return None
 
     def open_scope(self, vis: AstVisitor):
-        # self.scopes.append(dict())
-        # self.curScope += 1
         new_name = self.name.copy()
         new_id = 0 + len(self.subScopes)
         new_name.append(new_id)

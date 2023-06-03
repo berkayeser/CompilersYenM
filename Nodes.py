@@ -57,7 +57,13 @@ class FunctionNode(Node):
     block = [] #BlockNode
 
     def generateMips(self, mips):
-        return mips.visitFunction(self)
+        # Alle registers opslaan
+
+        a = mips.visitFunction(self)
+
+        # Alle registers terugzetten
+
+        return a
 
 
 class PrintfNode(Node):
