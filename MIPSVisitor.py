@@ -257,26 +257,9 @@ class MIPSVisitor:
             result = newRegister
 
         if isinstance(variable, Local):
-            self.text.append(storeLocal(variable, result, self.sp))
+            self.text.append(variable.storeLocal(result, self.sp))
         elif isinstance(variable, Global):
-            self.text.append(storeGlobal(variable, result))
-
-    def storeGlobal(self, destination, register):
-        if isinstance(register, Global):
-            if destination.type == "float":
-                return f"s.s $f{register.register}, {destination.name}"
-            else:
-                return f"sw $t{register.register}, {destination.name}"
-        elif isinstance(register, Local):
-            if destination.type == "float":
-                return f"s.s {self.sp - destination.offset}($sp), {destination}"
-            else:
-                return f"sw {self.sp - destination.offset}($sp), {self.sp - destination.offset}($sp)"
-        elif isinstance(register, Register):
-            if destination.type == "float":
-                return f"s.s {register}, {destination}"
-            else:
-                return f"sw {register}, {destination}"
+            self.text.append(variable.storeGlobal(result))
 
     def visitLogic(self, node: LogicNode):
         lRegister = self.getValue(node.left.generateMips(self))
@@ -432,27 +415,33 @@ class MIPSVisitor:
     # TODO: needs to change actual value
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
-        register = self.getValue(node.variable.generateMips(self))
+        variable = node.variable.generateMips(self)
+        value = self.getValue(variable)
         instruction = None
-        floatType = (register.type == "f")
+        floatType = (value.type == "f")
         if node.operation == "++":
             if floatType:
                 tempRegister = Register()
                 tempRegister.assign(self.freg, "f")
                 self.text.append(tempRegister.save(1, self.treg))
-                instruction = add(register, register, tempRegister)
+                instruction = add(value, value, tempRegister)
             else:
-                instruction = addi(register, register, 1)
+                instruction = addi(value, value, 1)
         elif node.operation == "--":
             if floatType:
                 tempRegister = Register()
                 tempRegister.assign(self.freg, "f")
                 self.text.append(tempRegister.save(1, self.treg))
-                instruction = sub(register, register, tempRegister)
+                instruction = sub(value, value, tempRegister)
             else:
-                instruction = subi(register, register, 1)
+                instruction = subi(value, value, 1)
         self.text.append(instruction)
-        return register
+        # store new value in variable
+        if isinstance(variable, Global):
+            variable.storeGlobal(value)
+        elif isinstance(variable, Local):
+            variable.storeLocal(value, self.sp)
+        return value
 
     def visitArray(self, node: ArrayNode):
         array = self.symbolTable.get_symbol(node.name)

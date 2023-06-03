@@ -49,6 +49,12 @@ class Local(Register):
 
         return instruction, newRegister.assign(register_nr, newType)
 
+    def storeLocal(self, register, sp):
+        if self.type == "float":
+            return f"s.s {register}, {self.offset - sp}($sp)"
+        else:
+            return f"sw {register}, {self.offset - sp}($sp)"
+
     def loadAddress(self, register_nr, sp):
         newRegister = Register()
         instruction = f"addi $t{register_nr}, $sp, {self.offset - sp}"
@@ -72,6 +78,12 @@ class Global(Register):
             instruction = f"lw $t{register_nr}, {self.name}"
 
         return instruction, newRegister.assign(register_nr, newType)
+
+    def storeGlobal(self, register):
+        if self.type == "float":
+            return f"s.s {register}, {self.name}"
+        else:
+            return f"sw {register}, {self.name}"
 
     def loadAdress(self, register_nr):
         newRegister = Register()
@@ -307,17 +319,3 @@ def logical_and(dest, src1, src2):
 # no floats
 def logical_or(dest, src1, src2):
         return f"or $t{dest}, $t{src1}, $t{src2}"
-
-
-def storeGlobal(destination: Global, register):
-    if destination.type == "float":
-        return f"s.s {register}, {destination.name}"
-    else:
-        return f"sw {register}, {destination.name}"
-
-
-def storeLocal(destination: Local, register, sp):
-    if destination.type == "float":
-        return f"s.s {register}, {destination.offset - sp}($sp)"
-    else:
-        return f"sw {register}, {destination.offset - sp}($sp)"
