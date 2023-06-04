@@ -13,7 +13,7 @@ class SymbolTable:
         self.name: list[int] = name
 
 
-    def add_symbol(self, name, type, function:bool = False):
+    def add_symbol(self, name, type, function:bool = False, register = None):
         # Function=True -> function parameter
         if name in self.scope1 and not function:
             if self.get_symbol(name)['type'] == type:
@@ -22,7 +22,10 @@ class SymbolTable:
             else:
                 raise Exception(f"Redefinition: Symbol '{name}' already defined in current scope")
         else:
-            self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True, 'declarations': []}
+            if object:
+                self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True, 'declarations': [], 'reg' : register}
+            else:
+                self.scope1[name] = {'type': type, 'value': None, 'assignOnce': True, 'declarations': []}
 
     def symbol_used_current(self, name: str):
         if name not in self.scope1:

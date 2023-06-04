@@ -132,7 +132,7 @@ class MIPSVisitor:
             nn = node.name.getText()
         else:
             nn = node.name
-        self.cur_symbol_table.add_symbol(nn, variable.type)
+        self.cur_symbol_table.add_symbol(nn, variable.type, False, variable)
 
         return variable
 
@@ -217,9 +217,11 @@ class MIPSVisitor:
         if variable.type == "f":
             register_nr = self.freg
             self.freg += 1
-        else:
+        elif variable.type == "t":
             register_nr = self.treg
             self.treg += 1
+        else:
+            print("error224")
 
         if isinstance(variable, Global):
             temp = variable.loadGlobal(register_nr)
@@ -440,7 +442,7 @@ class MIPSVisitor:
     # TODO: needs to change actual value
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
-        variable = node.variable.generateMips(self)
+        variable = node.variable.generateMips(self) # Variable mag niet dict zijn
         value = self.getValue(variable)
         instruction = None
         floatType = (value.type == "f")
