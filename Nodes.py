@@ -75,12 +75,17 @@ class PrintfNode(Node):
     def getASTvalue(self):
         return self.type
 
+    def generateMips(self, mips):
+        return mips.visitPrintf(self)
+
 
 class ScanfNode(Node):
     type = "scanf"
     string = None
     arguments = []
 
+    def generateMips(self, mips):
+        return mips.visitScanf(self)
 
 class FunctionArgNode(Node):
     type = "function_argument"
@@ -190,8 +195,7 @@ class BlockNode(Node):
             i.generateLlvm(llvm)
 
     def generateMips(self, mips):
-        for i in self.children:
-            i.generateMips(mips)
+        mips.visitBlock(self)
 
 
 class StatementNode(Node):
@@ -328,8 +332,8 @@ class ArrayInstantiationNode(Node):
     varType = ""
     const = ""
 
-    def generateMips(self, mips):
-        mips.visitArrayInstantiation(self)
+    def generateMips(self, mips, global_var=False):
+        mips.visitArrayInstantiation(self, global_var)
 
 
 class ArrayNode(Node):

@@ -24,6 +24,8 @@ class MIPSVisitor:
         self.if_label: int = -1
         self.while_label: int = -1
         self.printf_label: int = -1
+        self.scanf_label: int = -1
+
 
     def exit(self):
         self.text.append("\n# End MIPS Program")
@@ -62,21 +64,20 @@ class MIPSVisitor:
         new_index: int = self.printf_label
         return "printf_" + str(new_index)
 
+    def increase_scanf_label(self) -> str:
+        self.scanf_label = self.scanf_label + 1
+        new_index: int = self.scanf_label
+        return "scanf_" + str(new_index)
+
     def visitIf(self, node: IfNode):
         else_label = self.increase_if_label()
 
         # First parse Node Condition
-        nc = node.condition
-        if nc.type == "compare":
-            nc = nc.operation
-        else:
-            print("error56")
-
-        parsed_nc: list[str] = handle_condition_if(nc, else_label) # Parsed Node Condition
+        parsed_condition: list[str] = handle_condition(node.condition, else_label) # Parsed Node Condition
 
         # nc = Als de conditie niet waar is, springen we over het 'if' block:
 
-        for i in parsed_nc:
+        for i in parsed_condition:
             self.text.append(i)
 
         # Now parse If block
@@ -97,21 +98,13 @@ class MIPSVisitor:
 
 
     def visitWhile(self, node: WhileNode):
-        condition = node.condition
-        if condition.type == "compare":
-            condition = condition.operation
-        else:
-            print("error56")
-
-        block = node.block
-
         # Start of While block
         while_label: str = self.increase_while_label()
         self.text.append(while_label + ": ")
 
         # Parse Condition
-        done_label: str = self.increase_while_label()
-        parsed_condition = handle_condition_if(condition, done_label)
+        done_label: str = "WHILE_DONE_" + str(self.while_label)
+        parsed_condition = handle_condition(node.children[0], done_label)
 
         for i in parsed_condition:
             self.text.append(i)
@@ -121,6 +114,8 @@ class MIPSVisitor:
 
         # At end of while block, jump back to begin of While
         self.text.append("j " + while_label)
+        self.text.append(done_label + ":")
+
 
     def visitInstantiation(self, node: InstantiationNode, global_var):
         if global_var:
@@ -142,7 +137,11 @@ class MIPSVisitor:
         else:
             variable = self.declareLocalArray(node.type, node.size)
 
-        self.cur_symbol_table.add_symbol(variable.name, variable.type)
+        if type(node.name) != str:
+            nn = node.name.getText()
+        else:
+            nn = node.name
+        self.cur_symbol_table.add_symbol(nn, variable.type, False, variable)
 
         return variable
 
@@ -207,8 +206,8 @@ class MIPSVisitor:
         self.text.append(f"addi $sp, $sp, -{size * singleSize}")
         return LocalArray(self.sp, type, singleSize, size)
 
-    def visitVariable(self, node: VariableNode):
-        return self.cur_symbol_table.get_symbol(node.name)
+    def visitVariable(self, node: VariableNode) -> Register:
+        return self.cur_symbol_table.get_symbol(node.name)['reg']
 
     def getValue(self, variable):
         if isinstance(variable, Register):
@@ -522,6 +521,10 @@ class MIPSVisitor:
     def visitFunction(self, node: FunctionNode):
         declaration = node.declaration
         label: str = declaration.name
+        main_flag: bool = False
+        if label == "main":
+            main_flag = True
+            self.text.append(".globl main")
 
         self.text.append(label + ": ")
 
@@ -540,10 +543,13 @@ class MIPSVisitor:
 
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
-        node.block.generateMips(self)
+        nodeblock: BlockNode = node.block
+        nodeblock.generateMips(self)
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
-        self.text.append("jr $ra")
+        # behalve in int main()
+        if not main_flag:
+            self.text.append("jr $ra")
 
     def richerConversion(self, lRegister, rRegister):
         newRegister = Register()
@@ -604,8 +610,8 @@ class MIPSVisitor:
             statement.generateMips(self)
 
     def visitPrintf(self, node: PrintfNode):
-        self.text.append("addi $sp, $sp, -4")
-        self.text.append("sw $a0, 0($sp)")
+        #self.text.append("addi $sp, $sp, -4")
+        #self.text.append("sw $a0, 0($sp)")
 
         # Parse string with arguments
         s = parse_string(node.string, node.arguments)
@@ -619,13 +625,56 @@ class MIPSVisitor:
         # Call Printf Function
         self.text.append("jal printf")
 
-        self.text.append("lw $a0, 0($sp)")
-        self.text.append("addi $sp, $sp, 4")
+        #self.text.append("lw $a0, 0($sp)")
+        #self.text.append("addi $sp, $sp, 4")
 
     def visitScanf(self, node: ScanfNode):
-        # Call Scanf Function
-        node.arguments
-        self.text.append("jal scanf")
+        int = "%d"
+        float = "%f"
+        char = "%c"
+        string = "%s"
+        value = None
+
+        # Parse string
+        parsed = compile_scanf_string(node.string)
+        for i in range(0, len(parsed)):
+            variable_name: str = node.arguments[i].value.variable.name
+
+            # bv. arg: string/int/float/char = &x
+
+            register = self.cur_symbol_table.get_symbol(variable_name)['reg']
+            r: str = str(register.register)
+            if register.type == "s":
+                dest = "$s" + r
+            elif register.type == "t":
+                dest = "t" + r
+            else:
+                dest = "t" + r
+
+            if parsed[i] in [char, string]:
+                label = self.increase_scanf_label()
+                self.data.append(f"{label}: .space 61")
+                self.text.append("la $a0, " + label)
+                self.text.append("li $a1, 61")
+
+                # Call Scanf Function
+                self.text.append("jal scanf_string")
+                # Input in {label}
+
+                self.text.append(f"la ${dest} , {label}\n")
+            elif parsed[i] == int:
+                self.text.append("jal scanf_int")
+                # Input in $v0
+                dest = None
+
+                    #print("error660" + register.type)
+
+                self.text.append(f"la ${dest} , ($v0)\n")
+
+
+            # TODO 2) Value plaatsen in juiste register
+            #self.cur_symbol_table.add_symbol_value(variable_name, value)
+
 
     def visitFunction_call(self, node: CallNode):
         # Arguments in registers a0-3 plaatsen
@@ -649,11 +698,20 @@ class MIPSVisitor:
         self.text.append("")
 
         # Scanf functie implementeren
-        self.text.append("scanf:")
+        self.text.append("scanf_string:")
+        self.text.append("li $v0, 8")
+        self.text.append("syscall")
+        self.text.append("jr $ra")
+        # User Input will be in {label}
+
+        self.text.append("")
+
+        self.text.append("scanf_int:")
         self.text.append("li $v0, 5")
         self.text.append("syscall")
         self.text.append("jr $ra")
         # User Input will be in $v0
+
 
 
     def visitComment(self, node: CommentNode):

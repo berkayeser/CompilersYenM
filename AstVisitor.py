@@ -1004,6 +1004,8 @@ class AstVisitor(CVisitor):
         elif node.right.type == "unary":
             nrt = "unary"
         else:
+            if node.right.type == "term":
+                return
             nrt = node.right.literalType
 
         if (nlt == "int" and nrt == "float") or (nlt == "float" and nrt == "int"):

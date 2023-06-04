@@ -133,7 +133,7 @@ class LocalArray(Register):
 
         return instruction, newRegister.assign(register_nr, newType)
 
-def handle_condition(self ,var1, var2, operator :str) -> str:
+def handle_condition_straight(self ,var1, var2, operator :str) -> str:
     string :str = ""
     if operator   == "==":
         string = "beq $t0, $t1, then"
@@ -153,10 +153,25 @@ def handle_condition(self ,var1, var2, operator :str) -> str:
     return string
 
 
-def handle_condition_if(operator:str, label:str) -> list[str]:
+def handle_condition(condition, label:str) -> list[str]:
         # Assumes the condition variables, are in $t0 and $t1
         # For an If loop, we need to reverse the condition
-        string:str = ""
+        lstring:list[str] = []
+
+        if condition.type == "compare":
+            operator = condition.operation
+            # Variables handlen
+        elif condition.type == "literal":
+            if condition.value == 0 or condition.value == False:
+                lstring.append("b " + label)
+            else:
+                # Mogelijks oneindige loop
+                lstring.append("bne $0, $0, " + label)
+            return lstring
+        else:
+            print(1)
+            print(condition.type)
+            operator = "=="
 
         if operator   == "==":
             string = "bne $t0, $t1, " + label
@@ -200,6 +215,20 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> str:
     parsed += "\""
     return parsed
 
+def compile_scanf_string(string:str) -> list[str]:
+    string.replace(" ", "")
+    if string[-2:] == "\n":
+        string = string[:-2]
+
+    list: list = []
+    for i in range(0, len(string)):
+        if string[i] == "%":
+            if string[i+1].isnumeric():
+                list.append("%s")
+            else:
+                list.append(string[i:i+2])
+
+    return list
 
 def float_to_64bit_hex(x):
     if isinstance(x, str):
