@@ -214,10 +214,10 @@ class MIPSVisitor:
         if isinstance(variable, Register):
             return variable
 
-        if variable.type == "f":
+        if variable.type == "float":
             register_nr = self.freg
             self.freg += 1
-        elif variable.type == "t":
+        elif variable.type == "word" or variable.type == "byte":
             register_nr = self.treg
             self.treg += 1
         else:
@@ -438,8 +438,6 @@ class MIPSVisitor:
 
         self.text.append(instruction)
         return newRegister
-
-    # TODO: needs to change actual value
 
     def visitSpecialUnary(self, node: SpecialUnaryNode):
         variable = node.variable.generateMips(self) # Variable mag niet dict zijn
