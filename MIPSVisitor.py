@@ -80,19 +80,19 @@ class MIPSVisitor:
             self.text.append(i)
 
         # Now parse If block
-        self.visitBlock(node.block)
+        node.block.generateMips(self)
 
         # Als er een 'else' is, hierover heen springen
         else_node = False
         if node.elseNode:
             else_node = True
-            next_label: str = self.increase_if_label()
+            next_label: str = "next_" + str(self.if_label)
             self.text.append("j " + next_label)
 
         # Now parse Else block
         self.text.append(else_label + ": ")
         if else_node:
-            self.visitBlock(node.elseNode.block)
+            node.elseNode.block.generateMips(self)
             self.text.append(next_label + ":")
 
 
@@ -117,7 +117,7 @@ class MIPSVisitor:
             self.text.append(i)
 
         # Parse While block
-        self.visitBlock(block)
+        node.block.generateMips(self)
 
         # At end of while block, jump back to begin of While
         self.text.append("j " + while_label)
@@ -540,7 +540,7 @@ class MIPSVisitor:
 
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
-        self.visitBlock(node.block)
+        node.block.generateMips(self)
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         self.text.append("jr $ra")
@@ -624,7 +624,19 @@ class MIPSVisitor:
 
     def visitScanf(self, node: ScanfNode):
         # Call Scanf Function
+        node.arguments
         self.text.append("jal scanf")
+
+    def visitFunction_call(self, node: CallNode):
+        # Arguments in registers a0-3 plaatsen
+        for i in node.arguments:
+            if i.type == "literal":
+                pass
+            elif i.type == "variable":
+                pass
+
+        # Functie oproepen
+        self.text.append("jal " + node.name)
 
     def includeStdio(self):
         # Printf functie implementeren

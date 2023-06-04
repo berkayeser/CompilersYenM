@@ -103,6 +103,9 @@ class CallNode(Node):
     def getASTvalue(self):
         return self.name + "()"
 
+    def generateMips(self, mips):
+        return mips.visitFunction_Call(self)
+
 
 class ArgumentNode(Node):
     type = "argument"
