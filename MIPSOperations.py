@@ -5,6 +5,11 @@ from Nodes import *
 class Register:
     register = 0
     type = None
+    # address is only for variables and arrays, needed so ++ and -- can manipulate actual value
+    # index
+    arrayAddress = None
+    # juiste plaats
+    pointerAddress = None
 
     def assign(self, register_nr, type1):
         self.register = register_nr
@@ -24,7 +29,6 @@ class Register:
             return f"mfc1 $t{register_nr}, {self}" \
                    f"l.s {self}, 0($t{register_nr})", self
         return f"lw {self}, 0({self})", self
-
 
     def __repr__(self):
         return f"${self.type}{self.register}"
@@ -101,15 +105,19 @@ class GlobalArray(Register):
         newRegister = Register()
         if self.type == "float":
             newType = "f"
-            instruction = f"l.s $f{register_nr}, {self.name}({index})"
+            instruction = f"l.s $f{register_nr}, {index}({self.name})"
         elif self.type == "byte":
             newType = "t"
-            instruction = f"lb $t{register_nr}, {self.name}({index})"
+            instruction = f"lb $t{register_nr}, {index}({self.name})"
         else:
             newType = "t"
-            instruction = f"lw $t{register_nr}, {self.name}({index})"
+            instruction = f"lw $t{register_nr}, {index}({self.name})"
 
         return instruction, newRegister.assign(register_nr, newType)
+
+    def loadAddress(self, register_nr):
+        return f"la $t{register_nr}, {self.name}"
+
 
 class LocalArray(Register):
     def __init__(self, offset, type, size, arraySize):
