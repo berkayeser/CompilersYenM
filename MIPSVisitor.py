@@ -643,8 +643,22 @@ class MIPSVisitor:
             statement.generateMips(self)
 
     def visitPrintf(self, node: PrintfNode):
-        #self.text.append("addi $sp, $sp, -4")
-        #self.text.append("sw $a0, 0($sp)")
+        treg: int = self.treg
+        freg: int = self.freg
+        self.treg = 0
+        self.freg = 0
+        pointer = self.sp
+
+        for i in range(0, treg):
+            self.text.append(f"sw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+
+        for i in range(0, freg):
+            self.text.append(f"s.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+
+        pointer = self.sp
+
         int = "d"
         float = "f"
         char = "c"
@@ -674,59 +688,54 @@ class MIPSVisitor:
                     # Call Printf Function
                     self.text.append("jal printf_int")
                 elif i[0] == float:
-
                     # Waarde steken in $f12
+                    self.text.append(f"move $f12, {result}")
 
                     # Call Printf Function
                     self.text.append("jal printf_float")
+
+                elif i[0] == string:
+
+                    # TODO ADD GLOBAL
+
+                    tempRegister = Register()
+                    tempRegister.assign(self.treg, "t")
+                    for k in range(result.arraySize):
+                        self.text.append(f"li {tempRegister}, {result.offset - k}")
+                        self.text.append(f"lb $a0, ({tempRegister})")
+                        self.text.append("jal printf_char\n")
+                #
+                elif i[0] == char:
+                    print("char")
+                    pass
                 else:
-                    print("error676")
-        if False:
-            for i in s:
-                if i[0] == "%":
-                    type1 = i[1:2]
-                    # Waarde halen uit variable
-                    v = i[2:]
-                    reg = self.cur_symbol_table.get_symbol(v)["reg"]
-
-                    # Deze reg nu printen
-                    # Register value extracten
-                    # Put string into $a0
-
-                    self.text.append(f"la $a0, ($t{reg.register})")
-
-                    # Call Printf Function
-                    if type1 == "d":
-                        self.text.append("jal printf_int\n")
-                    else:
-                        self.text.append("jal printf_string\n")
-
-                else:
-                    label: str = self.increase_printf_label()
-                    # Put string into data
-                    self.data.append(f"{label}: .asciiz {i}")
-                    # Put string into $a0
-                    self.text.append(f"la $a0, {label}")
-                    # Call Printf Function
-                    self.text.append("jal printf_string\n")
+                    print("error676" + i[0])
 
 
-        #self.text.append("lw $a0, 0($sp)")
-        #self.text.append("addi $sp, $sp, 4")
+        self.treg = treg
+        self.freg = freg
+        self.text.append(f"\nli $sp, {pointer}")
+        for i in range(freg, 0, -1):
+            self.text.append(f"l.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+
+        for i in range(treg, 0, -1):
+            self.text.append(f"lw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+
+
+
 
     def visitScanf(self, node: ScanfNode):
-        for arg in node.arguments:
-            continue
-            register1 = self.getValue(arg.generateMips(self))
 
-        int = "%d"
-        float = "%f"
-        char = "%c"
-        string = "%s"
+        int_1 = "d"
+        float = "f"
+        char = "c"
+        string = "s"
         value = None
 
         # Parse string
-        parsed = compile_scanf_string(node.string)
+        parsed: list[str] = compile_scanf_string(node.string)
         for i in range(0, len(parsed)):
             variable_name: str = node.arguments[i].value.variable.name
 
@@ -742,7 +751,7 @@ class MIPSVisitor:
             else:
                 dest = "t" + r
 
-            if parsed[i] in [char, string]:
+            if parsed[i][0:1] == string:
                 label = self.increase_scanf_label()
                 self.data.append(f"{label}: .space 61")
                 self.text.append("la $a0, " + label)
@@ -755,18 +764,11 @@ class MIPSVisitor:
                 self.text.append(f"la ${dest} , {label}\n")
             elif parsed[i] == int:
                 self.text.append("jal scanf_int")
-                # Input in $v0
-
-                    #print("error660" + register.type)
-
-                self.text.append(f"la ${dest} , ($v0)\n")
+                # User Input in $v0
+                self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
+                # self.text.append(f"la ${dest} , ($v0)\n")
 
 
-            # TODO 2) Value plaatsen in juiste register
-            #self.cur_symbol_table.add_symbol_value(variable_name, value)
-
-            #for i in
-            #self.treg()
 
 
     def visitFunction_call(self, node: CallNode):

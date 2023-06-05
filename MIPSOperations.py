@@ -281,9 +281,10 @@ def compile_scanf_string(string:str) -> list[str]:
     for i in range(0, len(string)):
         if string[i] == "%":
             if string[i+1].isnumeric():
-                list.append("%s")
+                nr: str = string[i+1: i+2]
+                list.append("s" + nr)
             else:
-                list.append(string[i:i+2])
+                list.append(string[i+1:i+2])
 
     return list
 
