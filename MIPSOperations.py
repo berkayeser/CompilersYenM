@@ -10,6 +10,7 @@ class Register:
     arrayAddress = None
     # juiste plaats
     pointerAddress = None
+    arraySize = None
 
     def assign(self, register_nr, type1):
         self.register = register_nr
@@ -51,7 +52,8 @@ class Local(Register):
             newType = "t"
             instruction = f"lw $t{register_nr}, {self.offset - sp}($sp)"
 
-        return instruction, newRegister.assign(register_nr, newType)
+        newRegister.assign(register_nr, newType)
+        return instruction, newRegister
 
     def storeLocal(self, register, sp):
         if self.type == "float":
@@ -62,7 +64,9 @@ class Local(Register):
     def loadAddress(self, register_nr, sp):
         newRegister = Register()
         instruction = f"addi $t{register_nr}, $sp, {self.offset - sp}"
-        return instruction, newRegister.assign(register_nr, "t")
+
+        newRegister.assign(register_nr, "t")
+        return instruction, newRegister
 
 class Global(Register):
     def __init__(self, name, type):
@@ -81,7 +85,8 @@ class Global(Register):
             newType = "t"
             instruction = f"lw $t{register_nr}, {self.name}"
 
-        return instruction, newRegister.assign(register_nr, newType)
+        newRegister.assign(register_nr, newType)
+        return instruction, newRegister
 
     def storeGlobal(self, register):
         if self.type == "float":
@@ -92,7 +97,8 @@ class Global(Register):
     def loadAdress(self, register_nr):
         newRegister = Register()
         instruction = f"la $t{register_nr}, {self.name}"
-        return instruction, newRegister.assign(register_nr, "t")
+        newRegister.assign(register_nr, "t")
+        return instruction, newRegister
 
 class GlobalArray(Register):
     def __init__(self, name, type, size, arraySize):
@@ -113,7 +119,8 @@ class GlobalArray(Register):
             newType = "t"
             instruction = f"lw $t{register_nr}, {index}({self.name})"
 
-        return instruction, newRegister.assign(register_nr, newType)
+        newRegister.assign(register_nr, newType)
+        return instruction, newRegister
 
     def loadAddress(self, register_nr):
         return f"la $t{register_nr}, {self.name}"

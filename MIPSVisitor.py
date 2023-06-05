@@ -202,8 +202,12 @@ class MIPSVisitor:
     def visitVariable(self, node: VariableNode) -> Register:
         return self.cur_symbol_table.get_symbol(node.name)['reg']
 
-    def getValue(self, variable):
-        if isinstance(variable, Register):
+    def getValue(self, variable: Register):
+        if isinstance(variable, Global):
+            pass
+        elif isinstance(variable, Local):
+            pass
+        elif isinstance(variable, Register):
             return variable
 
         if variable.type == "float":
@@ -232,15 +236,19 @@ class MIPSVisitor:
         register = Register()
         if nlt == "int":
             register.assign(self.treg, "t")
+            self.treg += 1
             self.text.append(register.save(value))
         elif nlt == "float":
             register.assign(self.freg, "f")
+            self.freg += 1
             self.text.append(register.save(float_to_64bit_hex(value)))
         elif nlt == "char":
             register.assign(self.treg, "t")
+            self.treg += 1
             self.text.append(register.save(value))
         elif nlt == "bool":
             register.assign(self.treg, "t")
+            self.treg += 1
             if value:
                 self.text.append(register.save(1))
             else:
@@ -519,9 +527,11 @@ class MIPSVisitor:
             else:
                 result = array.loadLocal(index.register, address)
 
-        result[1].arrayAddress = address
+        ab = result[1]
+        ab.arrayAddress = address
+        ab.arraySize = array.arraySize
         self.text.append(result[0])
-        return result[1]
+        return ab
 
     def visitReturn(self, node: ReturnNode):
         if node.returnValue:
@@ -639,6 +649,7 @@ class MIPSVisitor:
         self.cur_symbol_table = self.cur_symbol_table.parentScope
 
     def visitExpressionStatement(self, node: ExpressionStatementNode):
+        self.text.append("# " + node.instruction)
         for statement in node.children:
             statement.generateMips(self)
 
@@ -677,8 +688,10 @@ class MIPSVisitor:
                 self.text.append("jal printf_string\n")
             else:
                 # i[1]: Literal/ TermNode/ Variabele / ...
-                result: Register = self.getValue(i[1].generateMips(self))
-
+                if i[1].type == "variable":
+                    result = self.cur_symbol_table.get_symbol(i[1].name)["reg"]
+                else:
+                    result: Register = self.getValue(i[1].generateMips(self))
                 if i[0] == int:
 
                     # Deze reg nu printen
@@ -743,6 +756,7 @@ class MIPSVisitor:
 
             register = self.cur_symbol_table.get_symbol(variable_name)['reg']
             r: str = str(register.register)
+
             dest = None
             if register.type == "s":
                 dest = "$s" + r
@@ -753,16 +767,32 @@ class MIPSVisitor:
 
             if parsed[i][0:1] == string:
                 label = self.increase_scanf_label()
-                self.data.append(f"{label}: .space 61")
+
+                size_str = parsed[i][1:]
+                size = int(size_str)
+                self.data.append(f"{label}: .space {size+1}")
                 self.text.append("la $a0, " + label)
-                self.text.append("li $a1, 61") # TODO Dynmically append max size
+                self.text.append(f"li $a1, {size+1}")
 
                 # Call Scanf Function
                 self.text.append("jal scanf_string")
                 # Input in {label}
 
-                self.text.append(f"la ${dest} , {label}\n")
-            elif parsed[i] == int:
+                tempRegister = Register()
+                tempRegister2 = Register()
+                tempRegister.assign(self.treg, "t")
+                tempRegister2.assign(self.treg+1, "t")
+                for k in range(size):
+                    self.text.append(f"\nla {tempRegister}, {label}")
+                    self.text.append(f"addi {tempRegister}, {tempRegister}, {k}")
+                    self.text.append(f"lb {tempRegister}, ({tempRegister})")
+                    self.text.append(f"li {tempRegister2}, {register.offset - k}")
+                    self.text.append(f"sb {tempRegister}, ({tempRegister2})")
+            elif parsed[i] == char:
+                self.text.append("jal scanf_")
+
+
+            elif parsed[i] == int_1:
                 self.text.append("jal scanf_int")
                 # User Input in $v0
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
@@ -787,6 +817,13 @@ class MIPSVisitor:
         # Value to be printed needs to be in $a0
         self.text.append("printf_string: # Print A String")
         self.text.append("li $v0, 4") # Print String
+        self.text.append("syscall")
+        self.text.append("jr $ra")
+
+        self.text.append("")
+
+        self.text.append("printf_char: # Print A Char")
+        self.text.append("li $v0, 11")  # Print Char
         self.text.append("syscall")
         self.text.append("jr $ra")
 
