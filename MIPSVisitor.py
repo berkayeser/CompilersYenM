@@ -241,7 +241,7 @@ class MIPSVisitor:
         elif nlt == "float":
             register.assign(self.freg, "f")
             self.freg += 1
-            self.text.append(register.save(float_to_64bit_hex(value)))
+            self.text.append(register.save(float_to_hex(value)))
         elif nlt == "char":
             register.assign(self.treg, "t")
             self.treg += 1
@@ -702,7 +702,7 @@ class MIPSVisitor:
                     self.text.append("jal printf_int")
                 elif i[0] == float:
                     # Waarde steken in $f12
-                    self.text.append(f"move $f12, {result}")
+                    self.text.append(f"mov.s $f12, {result}")
 
                     # Call Printf Function
                     self.text.append("jal printf_float")

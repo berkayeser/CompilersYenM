@@ -295,14 +295,16 @@ def compile_scanf_string(string:str) -> list[str]:
 
     return list
 
-def float_to_64bit_hex(x):
-    if isinstance(x, str):
-        x = float(x)
-    bytes_of_x = struct.pack('>f', x)
-    x_as_int = struct.unpack('>f', bytes_of_x)[0]
-    x_as_double = struct.pack('>d', x_as_int).hex()
-    x_as_double = '0x' + x_as_double
-    return x_as_double
+def float_to_hex(f):
+    # Pack the float value into a 4-byte string using the 'f' format specifier
+    packed = struct.pack('f', f)
+
+    # Unpack the packed bytes as an unsigned integer in little-endian byte order
+    # and format it as a 32-bit hexadecimal string
+    hex_str = hex(struct.unpack('<I', packed)[0])
+
+    # Return the hexadecimal string
+    return hex_str
 
 
 def add(dest, src1, src2):
@@ -369,12 +371,9 @@ def multiply(dest, src1, src2):
 
 def divide(dest, src1, src2):
     if dest.type == "f":
-        return f"div.s {src1}, {src2}\n" \
-               f"mov.s {dest}, $f0"
+        return f"div.s {dest}, {src1}, {src2}"
     else:  # Assuming data_type is "int"
-        return f"div {src1}, {src2}\n" \
-               f"mflo {dest}"
-
+        return f"div {dest}, {src1}, {src2}"
 
 def modulo(dest, src1, src2):
     if dest.type == "f":
