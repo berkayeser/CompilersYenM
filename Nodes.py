@@ -334,7 +334,7 @@ class ArrayInstantiationNode(Node):
     const = ""
 
     def generateMips(self, mips, global_var=False):
-        mips.visitArrayInstantiation(self, global_var)
+        return mips.visitArrayInstantiation(self, global_var)
 
 
 class ArrayNode(Node):
@@ -343,7 +343,7 @@ class ArrayNode(Node):
     index = None
 
     def generateMips(self, mips):
-        mips.visitArray(self)
+        return mips.visitArray(self)
 
 
 class LogicNode(Node):
