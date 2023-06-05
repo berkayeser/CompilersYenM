@@ -789,7 +789,10 @@ class MIPSVisitor:
                     self.text.append(f"li {tempRegister2}, {register.offset - k}")
                     self.text.append(f"sb {tempRegister}, ({tempRegister2})")
             elif parsed[i] == char:
-                self.text.append("jal scanf_")
+                self.text.append("jal scanf_char")
+                # User input in v0
+                self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
+
 
 
             elif parsed[i] == int_1:
@@ -798,7 +801,8 @@ class MIPSVisitor:
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
                 # self.text.append(f"la ${dest} , ($v0)\n")
 
-
+            self.text.append("li $a0, '\\n'")
+            self.text.append("jal printf_char")
 
 
     def visitFunction_call(self, node: CallNode):
@@ -850,6 +854,13 @@ class MIPSVisitor:
         self.text.append("jr $ra")
         # User Input will be in {label}
 
+        self.text.append("")
+
+        self.text.append("scanf_char:")
+        self.text.append("li $v0, 12")
+        self.text.append("syscall")
+        self.text.append("jr $ra")
+        # User Input will be in $v0
         self.text.append("")
 
         self.text.append("scanf_int:")
