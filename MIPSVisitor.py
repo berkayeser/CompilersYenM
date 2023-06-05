@@ -27,12 +27,6 @@ class MIPSVisitor:
         self.scanf_label: int = -1
         self.main: bool = False
 
-
-    def exit(self):
-        self.text.append("\n# End MIPS Program")
-        self.text.append("li $v0, 10")
-        self.text.append("syscall")
-
     def visitRun(self, node: RunNode):
         if node.include:
             self.includeStdio()
@@ -504,6 +498,7 @@ class MIPSVisitor:
         # index * self.size
         self.text.append(tempRegister.save(array.size))
         self.text.append(multiply(address, index, tempRegister))
+        self.text.append(neg(address, address))
 
         if isinstance(array, GlobalArray):
             if array.type == "float":
@@ -519,7 +514,7 @@ class MIPSVisitor:
         elif isinstance(array, LocalArray):
             self.text.append(tempRegister.save(array.offset))
             # address = arrayLocation(array.offset) - indexOffset(address)
-            self.text.append(sub(address, tempRegister, address))
+            self.text.append(add(address, tempRegister, address))
             if array.type == "float":
                 result = array.loadLocal(self.freg, address)
                 self.freg += 1
@@ -530,23 +525,24 @@ class MIPSVisitor:
         self.text.append(result[0])
         return result[1]
 
-    def visitReturn(self, node:ReturnNode):
-        type = node.returnValue # Is een Variable, Literal, Term, Function call, ...
-        # Bv literal
-        # De literal waarde steken in $2/$v0
-        value = node.returnValue.value
-
-        # Variabele
-        # variabele waarde halen uit $fp met offset, en 'lw' in $2/$v0
-
-        # Term
-        # uitrekenen en steken in $2/$v0
-
-        if self.main:
-            pass
-            # Exit with retrnvalue
+    def visitReturn(self, node: ReturnNode):
+        if node.returnValue:
+            toReturn = self.getValue(node.returnValue.generateMips(self))
+            # steken in $v0
+            if toReturn.type == "f":
+                self.text.append(f"mfc1 $v0, {toReturn}")
+            else:
+                self.text.append(f"move $v0, {toReturn}")
+        if self.main and node.returnValue:
+            self.text.append("\n# End MIPS Program")
+            self.text.append("move $a0, $v0")
+            self.text.append("li $v0, 17")
+            self.text.append("syscall")
+        elif self.main:
+            self.text.append("\n# End MIPS Program")
+            self.text.append("li $v0, 10")
+            self.text.append("syscall")
         else:
-            # Tenslotte " jr $ra "
             self.text.append("jr $ra")
 
 
