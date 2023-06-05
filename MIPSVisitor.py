@@ -25,6 +25,7 @@ class MIPSVisitor:
         self.while_label: int = -1
         self.printf_label: int = -1
         self.scanf_label: int = -1
+        self.main: bool = False
 
 
     def exit(self):
@@ -536,8 +537,13 @@ class MIPSVisitor:
         # Term
         # uitrekenen en steken in $2/$v0
 
-        # Tenslotte " jr $ra "
-        self.text.append("jr $ra")
+        if self.main:
+            pass
+            # Exit with retrnvalue
+        else:
+            # Tenslotte " jr $ra "
+            self.text.append("jr $ra")
+
 
     def visitBreak(self, node: BreakNode):
         pass
@@ -548,9 +554,8 @@ class MIPSVisitor:
     def visitFunction(self, node: FunctionNode):
         declaration = node.declaration
         label: str = declaration.name
-        main_flag: bool = False
         if label == "main":
-            main_flag = True
+            self.main = True
             self.text.append(".globl main")
 
         self.text.append(label + ": ")
@@ -575,8 +580,10 @@ class MIPSVisitor:
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         # behalve in int main()
-        if not main_flag:
+        if not self.main:
             self.text.append("jr $ra")
+        else:
+            self.main = False
 
     def richerConversion(self, lRegister, rRegister):
         newRegister = Register()
@@ -642,20 +649,43 @@ class MIPSVisitor:
 
         # Parse string with arguments
         s = parse_string(node.string, node.arguments)
-        label: str = self.increase_printf_label()
 
-        # Put string into data
-        self.data.append(f"{label}: .asciiz {s}")
-        # Put string into $a0
-        self.text.append(f"la $a0, {label}")
+        for i in s:
+            if i[0] == "%":
+                type1 = i[1:2]
+                # Waarde halen uit variable
+                v = i[2:]
+                reg = self.cur_symbol_table.get_symbol(v)["reg"]
 
-        # Call Printf Function
-        self.text.append("jal printf")
+                # Deze reg nu printen
+                # Register value extracten
+                # Put string into $a0
+
+                self.text.append(f"la $a0, ($t{reg.register})")
+
+                # Call Printf Function
+                if type1 == "d":
+                    self.text.append("jal printf_int\n")
+                else:
+                    self.text.append("jal printf_string\n")
+
+            else:
+                label: str = self.increase_printf_label()
+                # Put string into data
+                self.data.append(f"{label}: .asciiz {i}")
+                # Put string into $a0
+                self.text.append(f"la $a0, {label}")
+                # Call Printf Function
+                self.text.append("jal printf_string\n")
+
 
         #self.text.append("lw $a0, 0($sp)")
         #self.text.append("addi $sp, $sp, 4")
 
     def visitScanf(self, node: ScanfNode):
+        #for arg in node.arguments:
+        #    self.getValue(arg.generateMips(self))
+
         int = "%d"
         float = "%f"
         char = "%c"
@@ -671,6 +701,7 @@ class MIPSVisitor:
 
             register = self.cur_symbol_table.get_symbol(variable_name)['reg']
             r: str = str(register.register)
+            dest = None
             if register.type == "s":
                 dest = "$s" + r
             elif register.type == "t":
@@ -682,7 +713,7 @@ class MIPSVisitor:
                 label = self.increase_scanf_label()
                 self.data.append(f"{label}: .space 61")
                 self.text.append("la $a0, " + label)
-                self.text.append("li $a1, 61")
+                self.text.append("li $a1, 61") # TODO Dynmically append max size
 
                 # Call Scanf Function
                 self.text.append("jal scanf_string")
@@ -692,7 +723,6 @@ class MIPSVisitor:
             elif parsed[i] == int:
                 self.text.append("jal scanf_int")
                 # Input in $v0
-                dest = None
 
                     #print("error660" + register.type)
 
@@ -717,8 +747,15 @@ class MIPSVisitor:
     def includeStdio(self):
         # Printf functie implementeren
         # Value to be printed needs to be in $a0
-        self.text.append("printf:")
+        self.text.append("printf_string: # Print A String")
         self.text.append("li $v0, 4") # Print String
+        self.text.append("syscall")
+        self.text.append("jr $ra")
+
+        self.text.append("")
+
+        self.text.append("printf_int: # Print An Integer")
+        self.text.append("li $v0, 1")  # Print String
         self.text.append("syscall")
         self.text.append("jr $ra")
 
@@ -738,7 +775,7 @@ class MIPSVisitor:
         self.text.append("syscall")
         self.text.append("jr $ra")
         # User Input will be in $v0
-
+        self.text.append("")
 
 
     def visitComment(self, node: CommentNode):

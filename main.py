@@ -4,7 +4,6 @@ from Antlr.CLexer import CLexer
 from AstVisitor import *
 from AST import AST
 from AstOptimizer import AstOptimizer
-from LLVMVisitor import LLVMVisitor
 from MIPSVisitor import *
 
 # Test script that automatically runs our Compiler on specified C files.

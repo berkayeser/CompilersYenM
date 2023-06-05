@@ -200,28 +200,40 @@ def handle_condition(condition, label:str) -> list[str]:
 
 
 # Parse a string for Printf
-def parse_string(string: str, argument: list[ArgumentNode]) -> str:
-    parsed: str = "\""
-
-    ctr: int = 0
+def parse_string(string: str, argument: list[ArgumentNode]) -> list:
+    #parsed: str = "\""
+    #vars: list = []
+    parsed_parts: list = ["\""]
+    index: int = 0 # Index to parsed_parts
+    arg_ctr: int = 0
     for i in range(0, len(string)):
         if string[i-1] == "%":
             continue
         if string[i] == "%":
-            a = argument[ctr].value
+            a = argument[arg_ctr].value
             if isinstance(a, str):
-                parsed += a
+                parsed_parts[index] += a
             elif a.type == "literal":
-                parsed += a.value
+                parsed_parts[index] += a.value
             elif a.type == "variable":
-                print("errorVar")
+                #parsed += '%'
+                parsed_parts[index] += "\""
+                parsed_parts.append("%" + string[i+1] + a.name) # string i+1 = d,s
+                index += 2
+                parsed_parts.append("\"")
             else:
                 print("errorElse")
-            ctr += 1
+            arg_ctr += 1
         else:
-            parsed += string[i]
-    parsed += "\""
-    return parsed
+            parsed_parts[index] += string[i]
+
+    if parsed_parts[index][0] != "%":
+        parsed_parts[index] += "\""
+    parsed_parts2: list = []
+    for i in parsed_parts:
+        if i != "\"\"":
+            parsed_parts2.append(i)
+    return parsed_parts2
 
 def compile_scanf_string(string:str) -> list[str]:
     string.replace(" ", "")

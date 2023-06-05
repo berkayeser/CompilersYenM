@@ -36,6 +36,8 @@ class AstOptimizer:
                     avn: str = node.arguments[i].value.name
                     s: list = node.scope
                     avs = self.st.get_symbol(avn, None, s)
+                    if not avs["assignOnce"]:
+                        continue
                     v = self.st.get_most_recent_value(avn, cln, s)
 
                     #if avs['value'] is not None and avs['assignOnce'] is True:
@@ -47,7 +49,7 @@ class AstOptimizer:
                             nlt = nlt[5:]
                         new_node.literalType = nlt
                         node.arguments[i].value = new_node
-                    print()
+
 
         # Secondly, all other nodes
         for i in range(len(node.children)):
@@ -80,35 +82,37 @@ class AstOptimizer:
 
                     # Checken of er een identifier links en/of rechts is
                     # Als de variabele meerdere keren geassigned wordt doen we niets
-                    if childNode.right.left.type == "variable" and self.st.get_symbol(childNode.right.left.name)[
-                        'value'] is not None and self.st.get_symbol(childNode.right.left.name)['assignOnce'] is True:
-                        # identifier vervangen met waarde
+                    if childNode.right.left.type == "variable":
+                        symbol0 = self.st.get_symbol(childNode.right.left.name, None, childNode.scope)
+                        if symbol0['value'] is not None and symbol0['assignOnce'] is True:
+                            # identifier vervangen met waarde
 
-                        # 1 waarde opzoeken in symbol table
-                        v = self.st.get_symbol(childNode.right.left.name)['value']
+                            # 1 waarde opzoeken in symbol table
+                            v = symbol0['value']
 
-                        # 2 nieuwe literal node aanmaken
-                        node = LiteralNode()
-                        node.value = v
-                        nlt = self.st.get_symbol(childNode.right.left.name)['type']
-                        if nlt[0:5] == "const":
-                            nlt = nlt[5:]
-                        node.literalType = nlt
-                        # 3 variable node in Term node, vervangen met literal node
-                        childNode.right.left = node
-                        childNode.right.children[0] = node
+                            # 2 nieuwe literal node aanmaken
+                            node = LiteralNode()
+                            node.value = v
+                            nlt = symbol0['type']
+                            if nlt[0:5] == "const":
+                                nlt = nlt[5:]
+                            node.literalType = nlt
+                            # 3 variable node in Term node, vervangen met literal node
+                            childNode.right.left = node
+                            childNode.right.children[0] = node
 
-                    if childNode.right.right.type == "variable" and self.st.get_symbol(childNode.right.right.name)[
-                        'value'] is not None and self.st.get_symbol(childNode.right.right.name)['assignOnce'] is True:
-                        v = self.st.get_symbol(childNode.right.right.name)['value']
-                        node = LiteralNode()
-                        node.value = v
-                        nlt = self.st.get_symbol(childNode.right.right.name)['type']
-                        if nlt[0:5] == "const":
-                            nlt = nlt[5:]
-                        node.literalType = nlt
-                        childNode.right.right = node
-                        childNode.right.children[1] = node
+                    if childNode.right.right.type == "variable":
+                        symbol0 = self.st.get_symbol(childNode.right.right.name, "unint",childNode.scope)
+                        if symbol0['value'] is not None and symbol0['assignOnce'] is True:
+                            v = symbol0['value']
+                            node = LiteralNode()
+                            node.value = v
+                            nlt = symbol0['type']
+                            if nlt[0:5] == "const":
+                                nlt = nlt[5:]
+                            node.literalType = nlt
+                            childNode.right.right = node
+                            childNode.right.children[1] = node
 
         self.delReturnStatement(node)
 

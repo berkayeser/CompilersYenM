@@ -203,6 +203,7 @@ class StatementNode(Node):
     type = "line"
     statement = None
     comment = None
+    instruction = ""
 
     def generateLlvm(self, llvm):
         return llvm.visitLine(self)

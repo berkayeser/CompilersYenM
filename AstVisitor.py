@@ -16,7 +16,7 @@ class AstVisitor(CVisitor):
 
     def visitRun(self, ctx: CParser.RunContext):
         if ctx.exception is not None:
-            raise Exception("syntax error")
+            raise Exception("Syntax error: Int Main() Not found!")
 
         ast = AST()
         node = RunNode()
@@ -355,9 +355,11 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         self.line_nr += 1
+
         node = None
         if ctx.expression_statement():
             node = StatementNode()
+            node.instruction = ctx.getText()
             node.statement = self.visitExpression_statement(ctx.expression_statement())
             node.children.append(node.statement)
         elif ctx.array_initialisation():
@@ -387,6 +389,7 @@ class AstVisitor(CVisitor):
         elif ctx.comment():
             node.comment = self.visitComment(ctx.comment())
             node.children.append(node.comment)
+        node.instruction = ctx.getText()
         return node
 
     def visitArray_initialisation(self, ctx: CParser.Array_initialisationContext):
@@ -494,6 +497,11 @@ class AstVisitor(CVisitor):
         node.string = ctx.STRINGLITERAL().getText()[1:-1]
         if ctx.argument():
             node.arguments = self.visitArgument(ctx.argument())
+
+        for arg in node.arguments:
+            if arg.value.type == "unary":
+                self.cur_symbol_table.symbol_used_twice(arg.value.variable.name)
+
         return node
 
     def parse_string(self, string:str) -> list[str]:
@@ -1024,6 +1032,11 @@ class AstVisitor(CVisitor):
         node = TermNode()
         node.operation = ctx.termops().getText()
         node.left = self.visitFactor(ctx.factor(0))
+
+        #a = self.cur_symbol_table.get_symbol(str(node.name), "undef")
+        #if a['value'] is None:
+        #    raise Exception(f"Syntax Error; Symbol '{node.name}' is uninitialized")
+
         if ctx.term():
             node.right = self.visitTerm(ctx.term())
         else:
@@ -1080,8 +1093,8 @@ class AstVisitor(CVisitor):
             node.line_nr = self.line_nr
             if self.loop:
                 node.line_nr = - node.line_nr
-            # Use of an uninitialized variable
-            self.cur_symbol_table.get_symbol(str(node.name), "unint")
+            # Use of an undeclared variable
+            self.cur_symbol_table.get_symbol(str(node.name), "undef")
         elif ctx.array():
             node = self.visitArray(ctx.array())
         elif ctx.logicexpression():
