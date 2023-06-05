@@ -202,13 +202,49 @@ def handle_condition(condition, label:str) -> list[str]:
 
 # Parse a string for Printf
 def parse_string(string: str, argument: list[ArgumentNode]) -> list:
-    #parsed: str = "\""
-    #vars: list = []
-    parsed_parts: list = ["\""]
+    if not argument:
+        return ["\"" + string + "\""]
+    parsed_parts: list = []
     index: int = 0 # Index to parsed_parts
     arg_ctr: int = 0
+
     for i in range(0, len(string)):
         if string[i-1] == "%":
+            continue
+        if string[i] == "%":
+            a = argument[arg_ctr].value
+            if isinstance(a, str):
+                if not parsed_parts[-1] or not isinstance(parsed_parts[-1], str):
+                    parsed_parts.append(a)
+                else:
+                    parsed_parts[-1] += a
+            else:
+                parsed_parts.append([string[i+1:i+2],a])
+            arg_ctr += 1
+        else:
+            if not parsed_parts[-1] or not isinstance(parsed_parts[-1], str):
+                parsed_parts.append(string[i])
+                index += 1
+            else:
+                parsed_parts[-1] += string[i]
+
+
+    for i in range(0,len(parsed_parts)):
+
+        if isinstance(parsed_parts[i], str):
+            parsed_parts[i] = "\"" + parsed_parts[i] + "\""
+
+
+    return parsed_parts
+
+def parse_string2(string:str, argument: list[ArgumentNode]) -> list:
+    # parsed: str = "\""
+    # vars: list = []
+    parsed_parts: list = ["\""]
+    index: int = 0  # Index to parsed_parts
+    arg_ctr: int = 0
+    for i in range(0, len(string)):
+        if string[i - 1] == "%":
             continue
         if string[i] == "%":
             a = argument[arg_ctr].value
@@ -217,9 +253,9 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> list:
             elif a.type == "literal":
                 parsed_parts[index] += a.value
             elif a.type == "variable":
-                #parsed += '%'
+                # parsed += '%'
                 parsed_parts[index] += "\""
-                parsed_parts.append("%" + string[i+1] + a.name) # string i+1 = d,s
+                parsed_parts.append("%" + string[i + 1] + a.name)  # string i+1 = d,s
                 index += 2
                 parsed_parts.append("\"")
             else:

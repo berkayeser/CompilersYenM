@@ -31,3 +31,8 @@ x = 4`
 
 #### Project 3
 De grammar en llvm code zonder variables
+
+Extra features:
+  Type bool
+  Returnwaarde in Mips ( return 1 met foutmelding )
+  Uninitialized Variable ( samen met undeclared )
