@@ -105,10 +105,10 @@ class GlobalArray(Register):
         newRegister = Register()
         if self.type == "float":
             newType = "f"
-            instruction = f"l.s $f{register_nr}, {index}({self.name})"
+            instruction = f"l.s $f{register_nr}, -{index}({self.name})"
         elif self.type == "byte":
             newType = "t"
-            instruction = f"lb $t{register_nr}, {index}({self.name})"
+            instruction = f"lb $t{register_nr}, -{index}({self.name})"
         else:
             newType = "t"
             instruction = f"lw $t{register_nr}, {index}({self.name})"
@@ -139,7 +139,8 @@ class LocalArray(Register):
             newType = "t"
             instruction = f"lw $t{register_nr}, ({index})"
 
-        return instruction, newRegister.assign(register_nr, newType)
+        newRegister.assign(register_nr, newType)
+        return instruction, newRegister
 
 def handle_condition_straight(self ,var1, var2, operator :str) -> str:
     string :str = ""

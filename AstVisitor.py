@@ -916,9 +916,6 @@ class AstVisitor(CVisitor):
         if ctx.exception is not None:
             raise Exception("syntax error")
         if not ctx.logicops():
-            a = ctx.boolexpression()
-            b = ctx.boolexpression(0)
-
             node = self.visitBoolexpression(ctx.boolexpression(0))
             return node
         node = LogicNode()

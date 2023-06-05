@@ -133,9 +133,9 @@ class MIPSVisitor:
 
     def visitArrayInstantiation(self, node: ArrayInstantiationNode, global_var):
         if global_var:
-            variable = self.declareGlobalArray(node.name, node.type, node.size)
+            variable = self.declareGlobalArray(node.name, node.varType, node.size)
         else:
-            variable = self.declareLocalArray(node.type, node.size)
+            variable = self.declareLocalArray(node.varType, node.size)
 
         if type(node.name) != str:
             nn = node.name.getText()
@@ -289,14 +289,14 @@ class MIPSVisitor:
         elif isinstance(variable, Register):
             if variable.pointerAddress:
                 if variable.type == "float":
-                    return f"s.s {result}, ({variable.pointerAddress})"
+                    self.text.append(f"s.s {result}, ({variable.pointerAddress})")
                 else:
-                    return f"sw {result}, ({variable.pointerAddress})"
+                    self.text.append(f"sw {result}, ({variable.pointerAddress})")
             elif variable.arrayAddress:
                 if variable.type == "float":
-                    return f"s.s {result}, ({variable.arrayAddress})"
+                    self.text.append(f"s.s {result}, ({variable.arrayAddress})")
                 else:
-                    return f"sw {result}, ({variable.arrayAddress})"
+                    self.text.append(f"sw {result}, ({variable.arrayAddress})")
 
 
     def visitLogic(self, node: LogicNode):
@@ -392,7 +392,8 @@ class MIPSVisitor:
         elif node.operation == "*":
             temp = None
             index = Register()
-            index.assign(self.treg, "t")
+            # highest t register
+            index.assign(7, "t")
             if isinstance(register, Local):
                 temp = register.loadLocal(register.register, self.sp)
                 index.save(register.offset - self.sp)
@@ -473,14 +474,14 @@ class MIPSVisitor:
         self.text.append(instruction)
         # store new value in variable
         if isinstance(variable, Global):
-            variable.storeGlobal(value)
+            self.text.append(variable.storeGlobal(value))
         elif isinstance(variable, Local):
-            variable.storeLocal(value, self.sp)
+            self.text.append(variable.storeLocal(value, self.sp))
         # pointer and array
         else:
             if variable.pointerAddress:
                 if variable.type == "float":
-                    return f"s.s {value}, ({variable.pointerAddress})"
+                    self.text.append(f"s.s {value}, ({variable.pointerAddress})")
                 else:
                     return f"sw {value}, ({variable.pointerAddress})"
             elif variable.arrayAddress:
@@ -491,36 +492,40 @@ class MIPSVisitor:
         return value
 
     def visitArray(self, node: ArrayNode):
-        array = self.cur_symbol_table.get_symbol(node.name)
+        array = self.cur_symbol_table.get_symbol(node.name)["reg"]
         # Has to be int (t register)
         index = self.getValue(node.index.generateMips(self))
         result = None
+        address = Register()
+        address.assign(7, "t")
+        tempRegister = Register()
+        tempRegister.assign(self.treg + 1, "t")
         # index * self.size
-        temRegister = Register()
-        temRegister.assign(self.treg, "t")
-        self.text.append(temRegister.save(array.size))
-        self.text.append(multiply(index, index, temRegister))
+        self.text.append(tempRegister.save(array.size))
+        self.text.append(multiply(address, index, tempRegister))
+
         if isinstance(array, GlobalArray):
             if array.type == "float":
-                result = array.loadGlobal(self.freg, index)
+                result = array.loadGlobal(self.freg, address)
                 self.freg += 1
             else:
-                result = array.loadGlobal(index.register, index)
-            self.text.append(array.loadAddress(temRegister.register))
-            self.text.append(add(index, index, temRegister))
+                result = array.loadGlobal(index.register, address)
+            # address = arrayAddress(tempRegister) - indexOffset(address)
+            self.text.append(array.loadAddress(tempRegister.register))
+            self.text.append(sub(address, tempRegister, address))
 
         # (self.offset - sp) + index
         elif isinstance(array, LocalArray):
-            self.text.append(temRegister.save(array.offset))
-            self.text.append(subi(temRegister, temRegister, self.sp))
-            self.text.append(add(index, index, temRegister))
+            self.text.append(tempRegister.save(array.offset))
+            # address = arrayLocation(array.offset) - indexOffset(address)
+            self.text.append(sub(address, tempRegister, address))
             if array.type == "float":
-                result = array.loadLocal(self.freg, index)
+                result = array.loadLocal(self.freg, address)
                 self.freg += 1
             else:
-                result = array.loadLocal(index.register, index)
+                result = array.loadLocal(index.register, address)
 
-        result[1].arrayAddress = index
+        result[1].arrayAddress = address
         self.text.append(result[0])
         return result[1]
 
