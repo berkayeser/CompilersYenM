@@ -359,7 +359,6 @@ class AstVisitor(CVisitor):
         node = None
         if ctx.expression_statement():
             node = StatementNode()
-            node.instruction = ctx.getText()
             node.statement = self.visitExpression_statement(ctx.expression_statement())
             node.children.append(node.statement)
         elif ctx.array_initialisation():
@@ -375,6 +374,8 @@ class AstVisitor(CVisitor):
             if isinstance(node, tuple):
                 whileNode = node[1]
                 node = node[0]
+                node.instruction = ctx.getText()
+
                 if ctx.comment():
                     node.comment = self.visitComment(ctx.comment())
                     node.children.append(node.comment)
@@ -766,6 +767,7 @@ class AstVisitor(CVisitor):
                     if not isinstance(n,str):
                         n = n.getText()
                     self.cur_symbol_table.add_symbol_value(n, node.right.value, self.line_nr)
+                    self.cur_symbol_table.symbol_used_twice(n)
                     # Scope toevoegen
                     # node.scope = self.cur_symbol_table.name
 
@@ -830,7 +832,10 @@ class AstVisitor(CVisitor):
 
         # Check for wrong assignment, bv: float f(); int e = f()
         if node.right.type == "call":
-            nlt:str = self.cur_symbol_table.get_symbol(node.left.name)['type']
+            nln: str = node.left.name
+            if not isinstance(nln, str):
+                nln = nln.getText()
+            nlt:str = self.cur_symbol_table.get_symbol(nln)['type']
             for f in self.functions:
                 if f[0].name == node.right.name:
                     frt = f[0].returnType #function return value type

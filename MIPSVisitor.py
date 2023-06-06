@@ -46,7 +46,7 @@ class MIPSVisitor:
     def increase_if_label(self) -> str:
         self.if_label = self.if_label + 1
         new_index: int = self.if_label
-        return "IF_" + str(new_index)
+        return "ELSE_" + str(new_index)
 
     def increase_while_label(self) -> str:
         self.while_label = self.while_label + 1
@@ -65,8 +65,8 @@ class MIPSVisitor:
 
     def visitIf(self, node: IfNode):
         else_label = self.increase_if_label()
-        ifBlock = []
-        elseBlock = []
+        end_label = "DONE_" + str(self.if_label)
+
         # First parse Node Condition
         condition = self.getValue(node.condition.generateMips(self))
         if condition.type == "f":
@@ -77,63 +77,33 @@ class MIPSVisitor:
             self.text.append(convert_float_to_int(newRegister, condition))
             condition = newRegister
 
-        # TODO replace labels
         if node.elseNode:
-            self.text.append(f"beqz {condition} else")
+            self.text.append(f"beqz {condition} {else_label}")
         else:
-            self.text.append(f"beqz {condition} end")
+            self.text.append(f"beqz {condition} {end_label}")
 
         node.block.generateMips(self)
 
-        self.text.append(f"j end\n")
+        self.text.append(f"j {end_label}\n")
 
         if node.elseNode:
-            self.text.append("else: \n")
+            self.text.append(f"{else_label}: \n")
             node.elseNode.generateMips(self)
 
-        self.text.append(f"end: \n")
-        #
-        #
-        # parsed_condition: list[str] = handle_condition(node.condition, else_label) # Parsed Node Condition
-        #
-        # # nc = Als de conditie niet waar is, springen we over het 'if' block:
-        #
-        # for i in parsed_condition:
-        #     self.text.append(i)
-        #
-        # # Now parse If block
-        # node.block.generateMips(self)
-        #
-        # # Als er een 'else' is, hierover heen springen
-        # else_node = False
-        # if node.elseNode:
-        #     else_node = True
-        #     next_label: str = "next_" + str(self.if_label)
-        #     self.text.append("j " + next_label)
-        #
-        # # Now parse Else block
-        # self.text.append(else_label + ": ")
-        # if else_node:
-        #     node.elseNode.block.generateMips(self)
-        #     self.text.append(next_label + ":")
+        self.text.append(f"{end_label}: \n")
 
-    # TODO free registers
+        self.treg -= 1
+
     def visitWhile(self, node: WhileNode):
         # Start of While block
         while_label: str = self.increase_while_label()
+        done_label: str = "WHILE_DONE_" + str(self.while_label)
         self.text.append(while_label + ": ")
 
         condition = self.getValue(node.condition.generateMips(self))
 
-        # TODO replace labels
-        self.text.append(f"beqz {condition} end")
+        self.text.append(f"beqz {condition}  {done_label}")
 
-        # Parse Condition
-        done_label: str = "WHILE_DONE_" + str(self.while_label)
-        parsed_condition = handle_condition(node.children[0], done_label)
-
-        for i in parsed_condition:
-            self.text.append(i)
 
         # Parse While block
         node.block.generateMips(self)
@@ -141,6 +111,8 @@ class MIPSVisitor:
         # At end of while block, jump back to begin of While
         self.text.append("j " + while_label)
         self.text.append(done_label + ":")
+
+        self.treg -= 1
 
 
     def visitInstantiation(self, node: InstantiationNode, global_var):
@@ -596,6 +568,10 @@ class MIPSVisitor:
     def visitFunction(self, node: FunctionNode):
         assert isinstance(node, FunctionNode)
 
+        self.functions.append(node.declaration)
+        if node.block is None or isinstance(node.block, list):
+            return
+
         # Save temporary registers
         treg: int = self.treg
         freg: int = self.freg
@@ -615,7 +591,6 @@ class MIPSVisitor:
         pointer = self.sp
 
         declaration = node.declaration
-        self.functions.append(node.declaration)
         label: str = declaration.name
         if label == "main":
             self.main = True
@@ -657,6 +632,7 @@ class MIPSVisitor:
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
         nodeblock: BlockNode = node.block
+        assert(isinstance(nodeblock, BlockNode))
         nodeblock.generateMips(self)
 
         # Load temporary registers
@@ -739,7 +715,6 @@ class MIPSVisitor:
         self.cur_symbol_table = self.cur_symbol_table.parentScope
 
     def visitExpressionStatement(self, node: ExpressionStatementNode):
-        self.text.append("# " + node.instruction)
         for statement in node.children:
             statement.generateMips(self)
 
@@ -761,7 +736,7 @@ class MIPSVisitor:
 
         pointer = self.sp
 
-        int = "d"
+        int_1 = "d"
         float = "f"
         char = "c"
         string = "s"
@@ -783,7 +758,7 @@ class MIPSVisitor:
                     result = self.cur_symbol_table.get_symbol(i[1].name)["reg"]
                 else:
                     result: Register = self.getValue(i[1].generateMips(self))
-                if i[0] == int:
+                if i[0] == int_1:
 
                     # Deze reg nu printen
                     # Register value extracten
@@ -906,10 +881,18 @@ class MIPSVisitor:
         a_ctr: int = 0
         for i in node.arguments:
             if isinstance(i, str):
-                self.text.append(f"la $a{str(a_ctr)}, {i}")
+                label:str = self.increase_printf_label()
+                self.data.append(f"{label}: .asciiz {i}")
+                self.text.append(f"move $a{str(a_ctr)}, {label}")
             else:
-                arg = i.generateMips(self)
-                self.text.append(f"la $a{str(a_ctr)}, {2}")
+                arg = self.getValue(i.value.generateMips(self))
+                self.text.append(f"move $a{str(a_ctr)}, {arg}")
+                if arg.type == "f":
+                    self.freg -= 1
+                elif arg.type == "t":
+                    self.treg -= 1
+                else:
+                    print("error900")
             a_ctr += 1
 
 

@@ -68,6 +68,7 @@ class Local(Register):
         newRegister.assign(register_nr, "t")
         return instruction, newRegister
 
+
 class Global(Register):
     def __init__(self, name, type):
         self.name = name
@@ -99,6 +100,7 @@ class Global(Register):
         instruction = f"la $t{register_nr}, {self.name}"
         newRegister.assign(register_nr, "t")
         return instruction, newRegister
+
 
 class GlobalArray(Register):
     def __init__(self, name, type, size, arraySize):
@@ -149,9 +151,10 @@ class LocalArray(Register):
         newRegister.assign(register_nr, newType)
         return instruction, newRegister
 
-def handle_condition_straight(self ,var1, var2, operator :str) -> str:
-    string :str = ""
-    if operator   == "==":
+
+def handle_condition_straight(self, var1, var2, operator: str) -> str:
+    string: str = ""
+    if operator == "==":
         string = "beq $t0, $t1, then"
     elif operator == "!=":
         string = "bne $t0, $t1, then"
@@ -169,42 +172,42 @@ def handle_condition_straight(self ,var1, var2, operator :str) -> str:
     return string
 
 
-def handle_condition(condition, label:str) -> list[str]:
-        # Assumes the condition variables, are in $t0 and $t1
-        # For an If loop, we need to reverse the condition
-        lstring:list[str] = []
+def handle_condition(condition, label: str) -> list[str]:
+    # Assumes the condition variables, are in $t0 and $t1
+    # For an If loop, we need to reverse the condition
+    lstring: list[str] = []
 
-        if condition.type == "compare":
-            operator = condition.operation
-            # Variables handlen
-        elif condition.type == "literal":
-            if condition.value == 0 or condition.value == False:
-                lstring.append("b " + label)
-            else:
-                # Mogelijks oneindige loop
-                lstring.append("bne $0, $0, " + label)
-            return lstring
+    if condition.type == "compare":
+        operator = condition.operation
+        # Variables handlen
+    elif condition.type == "literal":
+        if condition.value == 0 or condition.value == False:
+            lstring.append("b " + label)
         else:
-            print(1)
-            print(condition.type)
-            operator = "=="
+            # Mogelijks oneindige loop
+            lstring.append("bne $0, $0, " + label)
+        return lstring
+    else:
+        print(1)
+        print(condition.type)
+        operator = "=="
 
-        if operator   == "==":
-            string = "bne $t0, $t1, " + label
-        elif operator == "!=":
-            string = "beq $t0, $t1, " + label
-        elif operator == "<":
-            string = "bge $t0, $t1, " + label
-        elif operator == ">":
-            string = "ble $t0, $t1, " + label
-        elif operator == "<=":
-            string = "bgt $t0, $t1, " + label
-        elif operator == ">=":
-            string = "blt $t0, $t1, " + label
-        else:
-            print("error174" + str(operator))
+    if operator == "==":
+        string = "bne $t0, $t1, " + label
+    elif operator == "!=":
+        string = "beq $t0, $t1, " + label
+    elif operator == "<":
+        string = "bge $t0, $t1, " + label
+    elif operator == ">":
+        string = "ble $t0, $t1, " + label
+    elif operator == "<=":
+        string = "bgt $t0, $t1, " + label
+    elif operator == ">=":
+        string = "blt $t0, $t1, " + label
+    else:
+        print("error174" + str(operator))
 
-        return [string]
+    return [string]
 
 
 # Parse a string for Printf
@@ -212,21 +215,21 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> list:
     if not argument:
         return ["\"" + string + "\""]
     parsed_parts: list = []
-    index: int = 0 # Index to parsed_parts
+    index: int = 0  # Index to parsed_parts
     arg_ctr: int = 0
 
     for i in range(0, len(string)):
-        if string[i-1] == "%":
+        if string[i - 1] == "%":
             continue
         if string[i] == "%":
             a = argument[arg_ctr].value
             if isinstance(a, str):
-                if not parsed_parts[-1] or not isinstance(parsed_parts[-1], str):
+                if not parsed_parts or not isinstance(parsed_parts[-1], str):
                     parsed_parts.append(a)
                 else:
                     parsed_parts[-1] += a
             else:
-                parsed_parts.append([string[i+1:i+2],a])
+                parsed_parts.append([string[i + 1:i + 2], a])
             arg_ctr += 1
         else:
             if not parsed_parts or not isinstance(parsed_parts[-1], str):
@@ -235,17 +238,14 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> list:
             else:
                 parsed_parts[-1] += string[i]
 
-
-    for i in range(0,len(parsed_parts)):
-
+    for i in range(0, len(parsed_parts)):
         if isinstance(parsed_parts[i], str):
             parsed_parts[i] = "\"" + parsed_parts[i] + "\""
-
 
     return parsed_parts
 
 
-def parse_string2(string:str, argument: list[ArgumentNode]) -> list:
+def parse_string2(string: str, argument: list[ArgumentNode]) -> list:
     # parsed: str = "\""
     # vars: list = []
     parsed_parts: list = ["\""]
@@ -280,7 +280,8 @@ def parse_string2(string:str, argument: list[ArgumentNode]) -> list:
             parsed_parts2.append(i)
     return parsed_parts2
 
-def compile_scanf_string(string:str) -> list[str]:
+
+def compile_scanf_string(string: str) -> list[str]:
     string.replace(" ", "")
     if string[-2:] == "\n":
         string = string[:-2]
@@ -288,13 +289,14 @@ def compile_scanf_string(string:str) -> list[str]:
     list: list = []
     for i in range(0, len(string)):
         if string[i] == "%":
-            if string[i+1].isnumeric():
-                nr: str = string[i+1: i+2]
+            if string[i + 1].isnumeric():
+                nr: str = string[i + 1: i + 2]
                 list.append("s" + nr)
             else:
-                list.append(string[i+1:i+2])
+                list.append(string[i + 1:i + 2])
 
     return list
+
 
 def float_to_hex(f):
     # Pack the float value into a 4-byte string using the 'f' format specifier
@@ -376,6 +378,7 @@ def divide(dest, src1, src2):
     else:  # Assuming data_type is "int"
         return f"div {dest}, {src1}, {src2}"
 
+
 def modulo(dest, src1, src2):
     if dest.type == "f":
         return f"rem.s {src1}, {src2}\n" \
@@ -391,22 +394,22 @@ def compare(dest, op, src1, src2, temp=None):
         instruction = ""
         if op == "<":
             instruction = f"c.lt.s {src1}, {src2}\n" \
-                   f"movf {temp}, $zero"
+                          f"movf {temp}, $zero"
         elif op == ">":
             instruction = f"c.lt.s {src2}, {src1}\n" \
-                   f"movf {temp}, $zero"
+                          f"movf {temp}, $zero"
         elif op == "<=":
             instruction = f"c.le.s {src1}, {src2}\n" \
-                   f"movf {temp}, $zero"
+                          f"movf {temp}, $zero"
         elif op == ">=":
             instruction = f"c.le.s {src2}, {src1}\n" \
-                   f"movf {temp}, $zero"
+                          f"movf {temp}, $zero"
         elif op == "==":
             instruction = f"c.eq.s {src1}, {src2}\n" \
-                   f"movf {temp}, $zero"
+                          f"movf {temp}, $zero"
         elif op == "!=":
             instruction = f"c.eq.s {src1}, {src2}\n" \
-                   f"movt {temp}, $zero"
+                          f"movt {temp}, $zero"
         else:
             raise ValueError("Invalid comparison operator")
         instruction += f"\nmtc1 {temp}, {src1}"
@@ -432,9 +435,9 @@ def compare(dest, op, src1, src2, temp=None):
 
 # no flaots
 def logical_and(dest, src1, src2):
-        return f"and $t{dest}, $t{src1}, $t{src2}"
+    return f"and $t{dest}, $t{src1}, $t{src2}"
 
 
 # no floats
 def logical_or(dest, src1, src2):
-        return f"or $t{dest}, $t{src1}, $t{src2}"
+    return f"or $t{dest}, $t{src1}, $t{src2}"

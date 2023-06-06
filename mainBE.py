@@ -22,7 +22,7 @@ def main():
         os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
     tests_directory_path = "tests/projecten_test"
-    tests_directory_path = "tests/alle_projecten"
+    #tests_directory_path = "tests/alle_projecten"
 
     asm_directory_path = "tests/output/asm_files"
 
@@ -45,7 +45,7 @@ def main():
                 #try:
                 print("Entering: " + filename, flush=True)
                 ast = visitor.visit(tree)
-                ast = optimizer.optimize(ast, visitor.symbol_table)
+                #ast = optimizer.optimize(ast, visitor.symbol_table)
 
                 if vis_tree_flag:
                     ast.vis(filename)

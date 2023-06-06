@@ -57,12 +57,7 @@ class FunctionNode(Node):
     block = [] #BlockNode
 
     def generateMips(self, mips):
-        # Alle registers opslaan
-
         a = mips.visitFunction(self)
-
-        # Alle registers terugzetten
-
         return a
 
 
@@ -266,6 +261,7 @@ class ExpressionStatementNode(Node):
         return llvm.visitExpressionStatement(self)
 
     def generateMips(self, mips):
+        mips.text.append(f"\n# {self.instruction}")
         return mips.visitExpressionStatement(self)
 
 
@@ -548,6 +544,9 @@ class SpecialUnaryNode(Node):
     type = "special_unary"
     operation = ""
     variable = None
+
+    def getASTvalue(self):
+        return self.variable.name + self.operation
 
     def foldConstant(self):
         if self.variable.type == "literal":
