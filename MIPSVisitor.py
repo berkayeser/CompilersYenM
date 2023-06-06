@@ -572,23 +572,10 @@ class MIPSVisitor:
         if node.block is None or isinstance(node.block, list):
             return
 
-        # Save temporary registers
-        treg: int = self.treg
-        freg: int = self.freg
-        self.treg = 0
-        self.freg = 0
-
-        for i in range(0, treg):
-            self.text.append(f"sw $t{i}, 0($sp)")
-            self.text.append(f"addi $sp, $sp, -4")
-            self.sp -= 4
-
-        for i in range(0, freg):
-            self.text.append(f"s.s $f{i}, 0($sp)")
-            self.text.append(f"addi $sp, $sp, -4")
-            self.sp -= 4
-
-        pointer = self.sp
+        tfp: list[int] = self.save()
+        treg = tfp[0]
+        freg = tfp[1]
+        pointer = tfp[2]
 
         declaration = node.declaration
         label: str = declaration.name
@@ -600,7 +587,7 @@ class MIPSVisitor:
 
         # Functie argumenten parsen
         # De argumenten zullen steken in $4-7/$a0-3
-        # We steken deze in de $fp met offset met 'sw'
+        # We steken deze in de $sp met offset met 'sw'
         amt = len(declaration.arguments)
         if amt > 4:
             raise Exception("Too many arguments.")
@@ -790,20 +777,9 @@ class MIPSVisitor:
                 else:
                     print("error676" + i[0])
 
-        self.treg = treg
-        self.freg = freg
+        # load tempRegisters
+        self.restoreRegisters(treg, freg, pointer)
 
-        self.text.append(f"\nli $sp, {pointer}")
-
-        for i in range(freg, 0, -1):
-            self.text.append(f"addi $sp, $sp, 4")
-            self.text.append(f"l.s $f{i}, 0($sp)")
-            self.sp += 4
-
-        for i in range(treg, 0, -1):
-            self.text.append(f"addi $sp, $sp, 4")
-            self.text.append(f"lw $t{i}, 0($sp)")
-            self.sp += 4
 
     def visitScanf(self, node: ScanfNode):
 
