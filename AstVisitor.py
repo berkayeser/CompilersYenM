@@ -685,12 +685,12 @@ class AstVisitor(CVisitor):
 
         Statement = StatementNode()
         condition = self.visitFor_condition(ctx.for_condition())
-        Statement.statement = condition[0]
+        Statement.statement = condition[0] # int a = 0
         Statement.children = [Statement.statement]
-        While.condition = condition[1]
+        While.condition = condition[1] # a >3
         loop: bool = True
         While.block = self.visitBlock_scope(ctx.block_scope(), loop)
-        While.block.children.insert(0, condition[2])
+        While.block.children.append(condition[2]) # a ++
         While.children = [While.condition, While.block]
 
         return Statement, While

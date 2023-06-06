@@ -207,7 +207,11 @@ class StatementNode(Node):
         if self.comment:
             self.comment.generateMips(mips)
         if self.statement:
-            mips.text.append(f"\n# {self.instruction}")
+            mips.text.append("")
+            instr = self.instruction
+            instr = instr.split("\n")
+            for i in instr:
+                mips.text.append("# " + i)
             self.statement.generateMips(mips)
 
 
@@ -262,7 +266,7 @@ class ExpressionStatementNode(Node):
         return llvm.visitExpressionStatement(self)
 
     def generateMips(self, mips):
-        mips.text.append(f"\n# {self.instruction}")
+        mips.text.append(f"\n ## {self.instruction}")
         return mips.visitExpressionStatement(self)
 
 
@@ -547,7 +551,11 @@ class SpecialUnaryNode(Node):
     variable = None
 
     def getASTvalue(self):
-        return self.variable.name + self.operation
+        if self.variable.type == "unary":
+            n = self.variable.variable.name
+        else:
+            n = self.variable.name
+        return n + self.operation
 
     def foldConstant(self):
         if self.variable.type == "literal":

@@ -577,7 +577,7 @@ class MIPSVisitor:
         self.treg = 0
         self.freg = 0
 
-        print(caller, "begin", self.sp, flush=True)
+        #print(caller, "begin", self.sp, flush=True)
 
         self.text.append(f"addi $sp, $sp, -4")
         self.text.append(f"sw $ra, 0($sp)")
@@ -600,7 +600,7 @@ class MIPSVisitor:
 
         self.text.append(f"addi $fp ,$sp, 0")
 
-        print(caller, "end", self.sp, flush=True)
+        #print(caller, "end", self.sp, flush=True)
 
         list1 = [treg, freg]
         self.fs = list1
@@ -611,7 +611,7 @@ class MIPSVisitor:
         # self.treg = treg
         # self.freg = freg
 
-        print(caller, "beginRestore", self.sp, flush=True)
+        #print(caller, "beginRestore", self.sp, flush=True)
 
         self.text.append(f"addi $sp ,$fp, 0")
 
@@ -634,7 +634,7 @@ class MIPSVisitor:
         self.text.append(f"addi $sp, $sp, 4")
         self.sp += 4
 
-        print(caller, "endRestore", self.sp, flush=True)
+        #print(caller, "endRestore", self.sp, flush=True)
 
 
     def visitFunction(self, node: FunctionNode):
@@ -786,7 +786,8 @@ class MIPSVisitor:
                 if i[1].type == "variable":
                     result = self.getValue(self.cur_symbol_table.get_symbol(i[1].name)["reg"])
                 else:
-                    result: Register = self.getValue(i[1].generateMips(self))
+                    gm = i[1].generateMips(self)
+                    result: Register = self.getValue(gm)
                 if i[0] == int_1:
 
                     # Deze reg nu printen
@@ -814,8 +815,9 @@ class MIPSVisitor:
                         self.text.append("jal printf_char\n")
                 #
                 elif i[0] == char:
-                    print("char")
-                    pass
+
+                    self.text.append(f"move $a0, {result}")
+                    self.text.append("jal printf_char\n")
                 else:
                     print("error676" + i[0])
 
@@ -881,7 +883,7 @@ class MIPSVisitor:
             elif parsed[i] == char:
                 self.text.append("jal scanf_char")
                 # User input in v0
-                print("dit is scanf", register.offset, self.sp, flush=True)
+                #print("dit is scanf", register.offset, self.sp, flush=True)
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
 
 
@@ -889,7 +891,7 @@ class MIPSVisitor:
             elif parsed[i] == int_1:
                 self.text.append("jal scanf_int")
                 # User Input in $v0
-                print("dit is scanf", register.offset, self.sp, flush=True)
+                #print("dit is scanf", register.offset, self.sp, flush=True)
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
                 # self.text.append(f"la ${dest} , ($v0)\n")
 

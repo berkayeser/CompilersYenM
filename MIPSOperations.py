@@ -17,6 +17,9 @@ class Register:
         self.type = type1
 
     def save(self, value, register_nr=0):
+        if isinstance(value, str) and len(value) == 1:
+            value = "\'" + value + "\'"
+
         if self.type == "f":
             return f"li $t{register_nr}, {value}\n" \
                    f"mtc1 $t{register_nr}, $f{self.register}"
