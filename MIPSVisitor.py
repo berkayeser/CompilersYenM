@@ -26,6 +26,7 @@ class MIPSVisitor:
         self.printf_label: int = -1
         self.scanf_label: int = -1
         self.main: bool = False
+        self.functions: list[FuncDeclareNode] = []
 
     def visitRun(self, node: RunNode):
         if node.include:
@@ -249,7 +250,7 @@ class MIPSVisitor:
             register_nr = self.treg
             self.treg += 1
         else:
-            print("error224")
+            print("error224 " + variable.type)
 
         if isinstance(variable, Global):
             temp = variable.loadGlobal(register_nr)
@@ -566,7 +567,7 @@ class MIPSVisitor:
         return ab
 
     def visitReturn(self, node: ReturnNode):
-        if node.returnValue:
+        if node.returnValue != "void":
             toReturn = self.getValue(node.returnValue.generateMips(self))
             # steken in $v0
             if toReturn.type == "f":
@@ -593,7 +594,28 @@ class MIPSVisitor:
         pass
 
     def visitFunction(self, node: FunctionNode):
+        assert isinstance(node, FunctionNode)
+
+        # Save temporary registers
+        treg: int = self.treg
+        freg: int = self.freg
+        self.treg = 0
+        self.freg = 0
+
+        for i in range(0, treg):
+            self.text.append(f"sw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
+
+        for i in range(0, freg):
+            self.text.append(f"s.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
+
+        pointer = self.sp
+
         declaration = node.declaration
+        self.functions.append(node.declaration)
         label: str = declaration.name
         if label == "main":
             self.main = True
@@ -614,10 +636,45 @@ class MIPSVisitor:
             offset -= 4
 
 
+        # Arguments initializen
+        for i in range(amt):
+            func_arg: FunctionArgNode = declaration.arguments[i]
+            type1 = func_arg.varType
+
+            newLocal = self.declareLocal(type1)
+
+            self.cur_symbol_table.add_symbol(func_arg.name, type1, True, newLocal)
+
+            a: str = "$a" + str(i)
+            self.text.append(f"sw {a}, ($sp)")
+            if type1 == "char":
+                self.sp -= 1
+                self.text.append(f"subi $sp, $sp, 1")
+            else:
+                self.sp -= 4
+                self.text.append(f"subi $sp, $sp, 4")
+
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
         nodeblock: BlockNode = node.block
         nodeblock.generateMips(self)
+
+        # Load temporary registers
+
+        self.treg = treg
+        self.freg = freg
+        self.text.append(f"\nli $sp, {pointer}")
+        for i in range(freg, 0, -1):
+            self.text.append(f"l.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+            self.sp += 4
+
+
+        for i in range(treg, 0, -1):
+            self.text.append(f"lw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+            self.sp += 4
+
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         # behalve in int main()
@@ -625,6 +682,7 @@ class MIPSVisitor:
             self.text.append("jr $ra")
         else:
             self.main = False
+
 
     def richerConversion(self, lRegister, rRegister):
         newRegister = Register()
@@ -690,15 +748,16 @@ class MIPSVisitor:
         freg: int = self.freg
         self.treg = 0
         self.freg = 0
-        pointer = self.sp
 
         for i in range(0, treg):
             self.text.append(f"sw $t{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
 
         for i in range(0, freg):
             self.text.append(f"s.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
 
         pointer = self.sp
 
@@ -763,12 +822,12 @@ class MIPSVisitor:
         for i in range(freg, 0, -1):
             self.text.append(f"l.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, 4")
+            self.sp += 4
 
         for i in range(treg, 0, -1):
             self.text.append(f"lw $t{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, 4")
-
-
+            self.sp += 4
 
 
     def visitScanf(self, node: ScanfNode):
@@ -836,17 +895,46 @@ class MIPSVisitor:
             self.text.append("li $a0, '\\n'")
             self.text.append("jal printf_char")
 
+    def find_function(self, name):
+        for i in self.functions:
+            if i.name == name:
+                return i
+        return None
 
     def visitFunction_call(self, node: CallNode):
         # Arguments in registers a0-3 plaatsen
+        a_ctr: int = 0
         for i in node.arguments:
-            if i.type == "literal":
-                pass
-            elif i.type == "variable":
-                pass
+            if isinstance(i, str):
+                self.text.append(f"la $a{str(a_ctr)}, {i}")
+            else:
+                arg = i.generateMips(self)
+                self.text.append(f"la $a{str(a_ctr)}, {2}")
+            a_ctr += 1
+
 
         # Functie oproepen
         self.text.append("jal " + node.name)
+
+        # Get Function Return 'Type'
+        found_func = self.find_function(node.name)
+        rt: str = ""
+        if found_func is None:
+            print("error886")
+        else:
+            rt = self.find_function(node.name).returnType
+
+        # Return waarde uit v0 halen en steken in t-register
+        returnRegister = Register()
+
+        if rt == "float":
+            returnRegister.assign(self.freg, "f")
+            self.text.append(f"mtc1 {returnRegister}, $v0")
+        else:
+            returnRegister.assign(self.treg, "t")
+            self.text.append(f"move {returnRegister}, $v0")
+
+        return returnRegister
 
     def includeStdio(self):
         # Printf functie implementeren

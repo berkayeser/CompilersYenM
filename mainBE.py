@@ -22,6 +22,8 @@ def main():
         os.mkdir('tests/output/ast_files/dot_files') # Maak een folder genaamd 'dotfiles' in 'output' aan
 
     tests_directory_path = "tests/projecten_test"
+    tests_directory_path = "tests/alle_projecten"
+
     asm_directory_path = "tests/output/asm_files"
 
     for foldername in os.listdir(tests_directory_path):

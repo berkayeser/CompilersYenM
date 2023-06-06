@@ -109,7 +109,7 @@ class CallNode(Node):
         return self.name + "()"
 
     def generateMips(self, mips):
-        return mips.visitFunction_Call(self)
+        return mips.visitFunction_call(self)
 
 
 class ArgumentNode(Node):

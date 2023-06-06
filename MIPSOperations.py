@@ -229,7 +229,7 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> list:
                 parsed_parts.append([string[i+1:i+2],a])
             arg_ctr += 1
         else:
-            if not parsed_parts[-1] or not isinstance(parsed_parts[-1], str):
+            if not parsed_parts or not isinstance(parsed_parts[-1], str):
                 parsed_parts.append(string[i])
                 index += 1
             else:
@@ -243,6 +243,7 @@ def parse_string(string: str, argument: list[ArgumentNode]) -> list:
 
 
     return parsed_parts
+
 
 def parse_string2(string:str, argument: list[ArgumentNode]) -> list:
     # parsed: str = "\""
