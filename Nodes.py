@@ -239,7 +239,7 @@ class ElseNode(Node):
         return llvm.visitElse(self)
 
     def generateMips(self, mips):
-        return mips.visitElse(self)
+        mips.visitBlock(self.block)
 
 
 class WhileNode(Node):

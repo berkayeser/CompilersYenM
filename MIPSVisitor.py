@@ -64,36 +64,68 @@ class MIPSVisitor:
 
     def visitIf(self, node: IfNode):
         else_label = self.increase_if_label()
-
+        ifBlock = []
+        elseBlock = []
         # First parse Node Condition
-        parsed_condition: list[str] = handle_condition(node.condition, else_label) # Parsed Node Condition
+        condition = self.getValue(node.condition.generateMips(self))
+        if condition.type == "f":
+            newRegister = Register()
+            newRegister.assign(self.treg, "t")
+            self.treg += 1
+            self.freg -= 1
+            self.text.append(convert_float_to_int(newRegister, condition))
+            condition = newRegister
 
-        # nc = Als de conditie niet waar is, springen we over het 'if' block:
+        # TODO replace labels
+        if node.elseNode:
+            self.text.append(f"beqz {condition} else")
+        else:
+            self.text.append(f"beqz {condition} end")
 
-        for i in parsed_condition:
-            self.text.append(i)
-
-        # Now parse If block
         node.block.generateMips(self)
 
-        # Als er een 'else' is, hierover heen springen
-        else_node = False
+        self.text.append(f"j end\n")
+
         if node.elseNode:
-            else_node = True
-            next_label: str = "next_" + str(self.if_label)
-            self.text.append("j " + next_label)
+            self.text.append("else: \n")
+            node.elseNode.generateMips(self)
 
-        # Now parse Else block
-        self.text.append(else_label + ": ")
-        if else_node:
-            node.elseNode.block.generateMips(self)
-            self.text.append(next_label + ":")
+        self.text.append(f"end: \n")
+        #
+        #
+        # parsed_condition: list[str] = handle_condition(node.condition, else_label) # Parsed Node Condition
+        #
+        # # nc = Als de conditie niet waar is, springen we over het 'if' block:
+        #
+        # for i in parsed_condition:
+        #     self.text.append(i)
+        #
+        # # Now parse If block
+        # node.block.generateMips(self)
+        #
+        # # Als er een 'else' is, hierover heen springen
+        # else_node = False
+        # if node.elseNode:
+        #     else_node = True
+        #     next_label: str = "next_" + str(self.if_label)
+        #     self.text.append("j " + next_label)
+        #
+        # # Now parse Else block
+        # self.text.append(else_label + ": ")
+        # if else_node:
+        #     node.elseNode.block.generateMips(self)
+        #     self.text.append(next_label + ":")
 
-
+    # TODO free registers
     def visitWhile(self, node: WhileNode):
         # Start of While block
         while_label: str = self.increase_while_label()
         self.text.append(while_label + ": ")
+
+        condition = self.getValue(node.condition.generateMips(self))
+
+        # TODO replace labels
+        self.text.append(f"beqz {condition} end")
 
         # Parse Condition
         done_label: str = "WHILE_DONE_" + str(self.while_label)
@@ -326,7 +358,7 @@ class MIPSVisitor:
         if lRegister.type == "f":
             tempRegister.assign(self.treg, "t")
             self.text.append(tempRegister.save(1))
-        instruction = compare(node.operation, lRegister, lRegister, rRegister, tempRegister)
+        instruction = compare(lRegister, node.operation, lRegister, rRegister, tempRegister)
         self.text.append(instruction)
         if rRegister.type == "f":
             self.freg -= 1
@@ -621,13 +653,13 @@ class MIPSVisitor:
         newRegister = Register()
         if (lRegister.type == "float" or rRegister.type == "float") and lRegister.type != rRegister.type:
             if rRegister.type == "f":
-                newRegister.assign(self.freg, "t")
+                newRegister.assign(self.treg, "t")
                 self.treg += 1
                 self.freg -= 1
                 self.text.append(convert_float_to_int(newRegister, rRegister))
                 rRegister = newRegister
             elif lRegister.type == "f":
-                newRegister.assign(self.freg, "t")
+                newRegister.assign(self.treg, "t")
                 self.treg += 1
                 self.freg -= 1
                 self.text.append(convert_float_to_int(newRegister, lRegister))
