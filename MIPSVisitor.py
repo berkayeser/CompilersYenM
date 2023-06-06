@@ -572,18 +572,18 @@ class MIPSVisitor:
         self.treg = 0
         self.freg = 0
 
-        self.text.append(f"sw $ra, 0($sp)")
         self.text.append(f"addi $sp, $sp, -4")
+        self.text.append(f"sw $ra, 0($sp)")
         self.sp -= 4
 
         for i in range(0, treg):
-            self.text.append(f"sw $t{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.text.append(f"sw $t{i}, 0($sp)")
             self.sp -= 4
 
         for i in range(0, freg):
-            self.text.append(f"s.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.text.append(f"s.s $f{i}, 0($sp)")
             self.sp -= 4
 
         pointer = self.sp
@@ -611,6 +611,8 @@ class MIPSVisitor:
         self.text.append(f"lw $ra, 0($sp)")
         self.text.append(f"addi $sp, $sp, 4")
         self.sp += 4
+
+
 
     def visitFunction(self, node: FunctionNode):
         assert isinstance(node, FunctionNode)
