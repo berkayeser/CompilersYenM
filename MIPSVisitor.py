@@ -11,7 +11,7 @@ class MIPSVisitor:
         self.treg = 0
         self.freg = 0
         self.sreg = 0
-        self.sp = 2147479548
+        self.sp = 2147479544
         self.fp = 0
 
         # Symbol Tables
@@ -607,7 +607,7 @@ class MIPSVisitor:
         offset: int = (amt-1) * 4
         for i in range(0, amt):
             a: str = "$a" + str(i)
-            self.text.append(f"sw {a}, {str(offset)}($fp)")
+            self.text.append(f"sw {a}, {str(offset)}($sp)")
             offset -= 4
 
 
@@ -725,13 +725,13 @@ class MIPSVisitor:
         self.freg = 0
 
         for i in range(0, treg):
-            self.text.append(f"sw $t{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.text.append(f"sw $t{i}, 0($sp)")
             self.sp -= 4
 
         for i in range(0, freg):
-            self.text.append(f"s.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, -4")
+            self.text.append(f"s.s $f{i}, 0($sp)")
             self.sp -= 4
 
         pointer = self.sp
@@ -755,7 +755,7 @@ class MIPSVisitor:
             else:
                 # i[1]: Literal/ TermNode/ Variabele / ...
                 if i[1].type == "variable":
-                    result = self.cur_symbol_table.get_symbol(i[1].name)["reg"]
+                    result = self.getValue(self.cur_symbol_table.get_symbol(i[1].name)["reg"])
                 else:
                     result: Register = self.getValue(i[1].generateMips(self))
                 if i[0] == int_1:
@@ -790,20 +790,20 @@ class MIPSVisitor:
                 else:
                     print("error676" + i[0])
 
-
         self.treg = treg
         self.freg = freg
+
         self.text.append(f"\nli $sp, {pointer}")
+
         for i in range(freg, 0, -1):
-            self.text.append(f"l.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, 4")
+            self.text.append(f"l.s $f{i}, 0($sp)")
             self.sp += 4
 
         for i in range(treg, 0, -1):
-            self.text.append(f"lw $t{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, 4")
+            self.text.append(f"lw $t{i}, 0($sp)")
             self.sp += 4
-
 
     def visitScanf(self, node: ScanfNode):
 

@@ -208,6 +208,7 @@ class StatementNode(Node):
             self.comment.generateMips(mips)
         if self.statement:
             self.statement.generateMips(mips)
+            mips.text.append(f"\n# {self.instruction}")
 
 
 class IfNode(Node):
