@@ -43,6 +43,7 @@ class MIPSVisitor:
             file.write(data + '\n')
         for text in self.text:
             file.write(text + '\n')
+
         file.close()
 
     def increase_if_label(self) -> str:
@@ -166,7 +167,7 @@ class MIPSVisitor:
             singleSize = 4
             type = "word"
         elif type == "char":
-            singleSize = 1
+            singleSize = 4
             type = "byte"
         elif "float" in type:
             singleSize = 4
@@ -180,7 +181,7 @@ class MIPSVisitor:
             size = 4
             type = "word"
         elif type == "char":
-            size = 1
+            size = 4
             type = "byte"
         elif "float" in type:
             size = 4
@@ -198,7 +199,7 @@ class MIPSVisitor:
             singleSize = 4
             type = "word"
         elif type == "char":
-            singleSize = 1
+            singleSize = 4
             type = "byte"
         elif "float" in type:
             singleSize = 4
@@ -408,11 +409,11 @@ class MIPSVisitor:
                 index.save(register.offset - self.sp)
             elif isinstance(register, Global):
                 temp = register.loadGlobal(register.register)
-                self.text.append(register.loadAdress(index.register))
+                self.text.append(register.loadAdress(index.register)[0])
             elif isinstance(register, Register):
                 self.text.append(index.save(0))
                 self.text.append(add(index, index, register))
-                self.text.append(register.load(self.treg))
+                self.text.append(register.load(self.treg)[0])
                 register.pointerAddress = index
                 return register
             temp[1].pointerAddress = index
@@ -492,12 +493,12 @@ class MIPSVisitor:
                 if variable.type == "float":
                     self.text.append(f"s.s {value}, ({variable.pointerAddress})")
                 else:
-                    return f"sw {value}, ({variable.pointerAddress})"
+                    self.text.append(f"sw {value}, ({variable.pointerAddress})")
             elif variable.arrayAddress:
                 if variable.type == "float":
-                    return f"s.s {value}, ({variable.arrayAddress})"
+                    self.text.append(f"s.s {value}, ({variable.arrayAddress})")
                 else:
-                    return f"sw {value}, ({variable.arrayAddress})"
+                    self.text.append(f"sw {value}, ({variable.arrayAddress})")
         return value
 
     def visitArray(self, node: ArrayNode):
@@ -655,6 +656,9 @@ class MIPSVisitor:
             tfp: list[int] = self.save("function")
             treg = tfp[0]
             freg = tfp[1]
+        else:
+            self.treg = 0
+            self.freg = 0
 
 
         # Functie argumenten parsen
@@ -674,13 +678,7 @@ class MIPSVisitor:
             self.cur_symbol_table.add_symbol(func_arg.name, type1, True, newLocal)
 
             a: str = "$a" + str(i)
-            if type1 == "char":
-                self.sp -= 1
-                self.text.append(f"subi $sp, $sp, 1")
-            else:
-                self.sp -= 4
-                self.text.append(f"subi $sp, $sp, 4")
-            self.text.append(f"sw {a}, ($sp)")
+            self.text.append(f"sw {a}, 0($sp)")
 
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
@@ -757,6 +755,8 @@ class MIPSVisitor:
 
     def visitExpressionStatement(self, node: ExpressionStatementNode):
         for statement in node.children:
+            self.treg = 0
+            self.freg = 0
             statement.generateMips(self)
 
     def visitPrintf(self, node: PrintfNode):
