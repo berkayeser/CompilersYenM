@@ -11,7 +11,7 @@ class MIPSVisitor:
         self.treg = 0
         self.freg = 0
         self.sreg = 0
-        self.sp = 2147479544
+        self.sp = 2147479548
         self.fp = 0
 
         # Symbol Tables
@@ -565,6 +565,53 @@ class MIPSVisitor:
     def visitContinue(self, node: ContinueNode):
         pass
 
+    def save(self) -> list[int]:
+        # Save temporary registers
+        treg: int = self.treg
+        freg: int = self.freg
+        self.treg = 0
+        self.freg = 0
+
+        self.text.append(f"sw $ra, 0($sp)")
+        self.text.append(f"addi $sp, $sp, -4")
+        self.sp -= 4
+
+        for i in range(0, treg):
+            self.text.append(f"sw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
+
+        for i in range(0, freg):
+            self.text.append(f"s.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, -4")
+            self.sp -= 4
+
+        pointer = self.sp
+
+        return [treg, freg, pointer]
+
+
+    def restoreRegisters(self, treg, freg, pointer):
+        self.treg = treg
+        self.freg = freg
+
+        self.sp = pointer
+
+        self.text.append(f"\nli $sp, {pointer}")
+        for i in range(freg-1, -1, -1):
+            self.text.append(f"l.s $f{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+            self.sp += 4
+
+        for i in range(treg-1, -1, -1):
+            self.text.append(f"lw $t{i}, 0($sp)")
+            self.text.append(f"addi $sp, $sp, 4")
+            self.sp += 4
+
+        self.text.append(f"lw $ra, 0($sp)")
+        self.text.append(f"addi $sp, $sp, 4")
+        self.sp += 4
+
     def visitFunction(self, node: FunctionNode):
         assert isinstance(node, FunctionNode)
 
@@ -591,12 +638,11 @@ class MIPSVisitor:
         amt = len(declaration.arguments)
         if amt > 4:
             raise Exception("Too many arguments.")
-        offset: int = (amt-1) * 4
-        for i in range(0, amt):
-            a: str = "$a" + str(i)
-            self.text.append(f"sw {a}, {str(offset)}($sp)")
-            offset -= 4
-
+        # offset: int = (amt-1) * 4
+        # for i in range(0, amt):
+        #     a: str = "$a" + str(i)
+        #     self.text.append(f"sw {a}, {str(offset)}($sp)")
+        #     offset -= 4
 
         # Arguments initializen
         for i in range(amt):
@@ -624,20 +670,7 @@ class MIPSVisitor:
 
         # Load temporary registers
 
-        self.treg = treg
-        self.freg = freg
-        self.text.append(f"\nli $sp, {pointer}")
-        for i in range(freg, 0, -1):
-            self.text.append(f"l.s $f{i}, 0($sp)")
-            self.text.append(f"addi $sp, $sp, 4")
-            self.sp += 4
-
-
-        for i in range(treg, 0, -1):
-            self.text.append(f"lw $t{i}, 0($sp)")
-            self.text.append(f"addi $sp, $sp, 4")
-            self.sp += 4
-
+        self.restoreRegisters(treg, freg, pointer)
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         # behalve in int main()
@@ -706,22 +739,10 @@ class MIPSVisitor:
             statement.generateMips(self)
 
     def visitPrintf(self, node: PrintfNode):
-        treg: int = self.treg
-        freg: int = self.freg
-        self.treg = 0
-        self.freg = 0
-
-        for i in range(0, treg):
-            self.text.append(f"addi $sp, $sp, -4")
-            self.text.append(f"sw $t{i}, 0($sp)")
-            self.sp -= 4
-
-        for i in range(0, freg):
-            self.text.append(f"addi $sp, $sp, -4")
-            self.text.append(f"s.s $f{i}, 0($sp)")
-            self.sp -= 4
-
-        pointer = self.sp
+        tfp: list[int] = self.save()
+        treg = tfp[0]
+        freg = tfp[1]
+        pointer = tfp[2]
 
         int_1 = "d"
         float = "f"
@@ -783,6 +804,12 @@ class MIPSVisitor:
 
     def visitScanf(self, node: ScanfNode):
 
+        # Save temporary registers
+        tfp: list[int] = self.save()
+        treg = tfp[0]
+        freg = tfp[1]
+        pointer = tfp[2]
+
         int_1 = "d"
         float = "f"
         char = "c"
@@ -843,8 +870,14 @@ class MIPSVisitor:
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
                 # self.text.append(f"la ${dest} , ($v0)\n")
 
+            # restore temp regsiters
             self.text.append("li $a0, '\\n'")
             self.text.append("jal printf_char")
+
+            self.restoreRegisters(treg, freg, pointer)
+
+            # self.text.append(f"addi $sp, $sp, 4")
+            # self.sp += 4
 
     def find_function(self, name):
         for i in self.functions:
