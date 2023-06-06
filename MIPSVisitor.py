@@ -556,6 +556,8 @@ class MIPSVisitor:
             self.text.append("li $v0, 10")
             self.text.append("syscall")
         else:
+            # Not Main Function
+            self.restoreRegisters(self.fs[0], self.fs[1])
             self.text.append("jr $ra")
 
 
@@ -633,6 +635,11 @@ class MIPSVisitor:
             self.text.append(".globl main")
 
         self.text.append(label + ": ")
+        if label != "main":
+            tfp: list[int] = self.save("function")
+            treg = tfp[0]
+            freg = tfp[1]
+
 
         # Functie argumenten parsen
         # De argumenten zullen steken in $4-7/$a0-3
@@ -677,6 +684,9 @@ class MIPSVisitor:
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         # behalve in int main()
         if not self.main:
+            # Load temporary registers
+            self.restoreRegisters(treg, freg, "function")
+
             self.text.append("jr $ra")
         else:
             self.main = False
@@ -744,7 +754,7 @@ class MIPSVisitor:
         tfp: list[int] = self.save()
         treg = tfp[0]
         freg = tfp[1]
-        pointer = tfp[2]
+
 
         int_1 = "d"
         float = "f"
@@ -801,7 +811,7 @@ class MIPSVisitor:
                     print("error676" + i[0])
 
         # load tempRegisters
-        self.restoreRegisters(treg, freg, pointer)
+        self.restoreRegisters(treg, freg)
 
 
     def visitScanf(self, node: ScanfNode):
@@ -810,7 +820,7 @@ class MIPSVisitor:
         tfp: list[int] = self.save()
         treg = tfp[0]
         freg = tfp[1]
-        pointer = tfp[2]
+
 
         int_1 = "d"
         float = "f"
@@ -876,7 +886,7 @@ class MIPSVisitor:
             self.text.append("li $a0, '\\n'")
             self.text.append("jal printf_char")
 
-            self.restoreRegisters(treg, freg, pointer)
+            self.restoreRegisters(treg, freg)
 
             # self.text.append(f"addi $sp, $sp, 4")
             # self.sp += 4
@@ -896,6 +906,7 @@ class MIPSVisitor:
                 self.data.append(f"{label}: .asciiz {i}")
                 self.text.append(f"move $a{str(a_ctr)}, {label}")
             else:
+                # Argument is Term/variable/ ....
                 arg = self.getValue(i.value.generateMips(self))
                 self.text.append(f"move $a{str(a_ctr)}, {arg}")
                 if arg.type == "f":
@@ -908,7 +919,7 @@ class MIPSVisitor:
 
 
         # Functie oproepen
-        self.text.append("jal " + node.name)
+        self.text.append("jal " + node.name + " \n")
 
         # Get Function Return 'Type'
         found_func = self.find_function(node.name)
