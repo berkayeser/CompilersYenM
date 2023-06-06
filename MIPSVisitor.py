@@ -14,6 +14,8 @@ class MIPSVisitor:
         self.sp = 2147479548
         self.fp = 0
 
+        self.fs: list[int] = []
+
         # Symbol Tables
         self.symbol_table: SymbolTable = SymbolTable([0])
         self.cur_symbol_table: SymbolTable = self.symbol_table
@@ -567,12 +569,14 @@ class MIPSVisitor:
     def visitContinue(self, node: ContinueNode):
         pass
 
-    def save(self) -> list[int]:
+    def save(self, caller: str = None) -> list[int]:
         # Save temporary registers
         treg: int = self.treg
         freg: int = self.freg
         self.treg = 0
         self.freg = 0
+
+        print(caller, "begin", self.sp, flush=True)
 
         self.text.append(f"addi $sp, $sp, -4")
         self.text.append(f"sw $ra, 0($sp)")
@@ -588,18 +592,33 @@ class MIPSVisitor:
             self.text.append(f"s.s $f{i}, 0($sp)")
             self.sp -= 4
 
-        pointer = self.sp
+        # Save Stack Pointer in Stack
+        self.text.append(f"addi $sp, $sp, -4")
+        self.text.append(f"sw $fp, 0($sp)")
+        self.sp -= 4
 
-        return [treg, freg, pointer]
+        self.text.append(f"addi $fp ,$sp, 0")
+
+        print(caller, "end", self.sp, flush=True)
+
+        list1 = [treg, freg]
+        self.fs = list1
+        return list1
 
 
-    def restoreRegisters(self, treg, freg, pointer):
+    def restoreRegisters(self, treg, freg, caller: str = None):
         self.treg = treg
         self.freg = freg
 
-        self.sp = pointer
+        print(caller, "beginRestore", self.sp, flush=True)
 
-        self.text.append(f"\nli $sp, {pointer}")
+        self.text.append(f"addi $sp ,$fp, 0")
+
+        # Set Stack Pointer ,from Stack
+        self.text.append(f"sw $fp, 0($sp)")
+        self.text.append(f"addi $sp, $sp, 4")
+        self.sp += 4
+
         for i in range(freg-1, -1, -1):
             self.text.append(f"l.s $f{i}, 0($sp)")
             self.text.append(f"addi $sp, $sp, 4")
@@ -614,6 +633,7 @@ class MIPSVisitor:
         self.text.append(f"addi $sp, $sp, 4")
         self.sp += 4
 
+        print(caller, "endRestore", self.sp, flush=True)
 
 
     def visitFunction(self, node: FunctionNode):
@@ -622,11 +642,6 @@ class MIPSVisitor:
         self.functions.append(node.declaration)
         if node.block is None or isinstance(node.block, list):
             return
-
-        tfp: list[int] = self.save()
-        treg = tfp[0]
-        freg = tfp[1]
-        pointer = tfp[2]
 
         declaration = node.declaration
         label: str = declaration.name
@@ -647,11 +662,6 @@ class MIPSVisitor:
         amt = len(declaration.arguments)
         if amt > 4:
             raise Exception("Too many arguments.")
-        # offset: int = (amt-1) * 4
-        # for i in range(0, amt):
-        #     a: str = "$a" + str(i)
-        #     self.text.append(f"sw {a}, {str(offset)}($sp)")
-        #     offset -= 4
 
         # Arguments initializen
         for i in range(amt):
@@ -663,13 +673,13 @@ class MIPSVisitor:
             self.cur_symbol_table.add_symbol(func_arg.name, type1, True, newLocal)
 
             a: str = "$a" + str(i)
-            self.text.append(f"sw {a}, ($sp)")
             if type1 == "char":
                 self.sp -= 1
                 self.text.append(f"subi $sp, $sp, 1")
             else:
                 self.sp -= 4
                 self.text.append(f"subi $sp, $sp, 4")
+            self.text.append(f"sw {a}, ($sp)")
 
         # Het blok van de functie
         # In dit blok wordt de return ook verwerkt
@@ -677,9 +687,7 @@ class MIPSVisitor:
         assert(isinstance(nodeblock, BlockNode))
         nodeblock.generateMips(self)
 
-        # Load temporary registers
-
-        self.restoreRegisters(treg, freg, pointer)
+        self.fs = []
 
         # zwz op het einde van de function returnen ( zelfs als er geen return in de functie staat )
         # behalve in int main()
@@ -872,6 +880,7 @@ class MIPSVisitor:
             elif parsed[i] == char:
                 self.text.append("jal scanf_char")
                 # User input in v0
+                print("dit is scanf", register.offset, self.sp, flush=True)
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
 
 
@@ -879,6 +888,7 @@ class MIPSVisitor:
             elif parsed[i] == int_1:
                 self.text.append("jal scanf_int")
                 # User Input in $v0
+                print("dit is scanf", register.offset, self.sp, flush=True)
                 self.text.append(f"sw $v0, {register.offset - self.sp}($sp)")
                 # self.text.append(f"la ${dest} , ($v0)\n")
 
