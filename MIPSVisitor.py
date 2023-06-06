@@ -94,6 +94,7 @@ class MIPSVisitor:
 
         self.text.append(f"{end_label}: \n")
 
+        # free condition
         self.treg -= 1
 
     def visitWhile(self, node: WhileNode):
@@ -607,8 +608,8 @@ class MIPSVisitor:
 
 
     def restoreRegisters(self, treg, freg, caller: str = None):
-        self.treg = treg
-        self.freg = freg
+        # self.treg = treg
+        # self.freg = freg
 
         print(caller, "beginRestore", self.sp, flush=True)
 
@@ -912,7 +913,7 @@ class MIPSVisitor:
         a_ctr: int = 0
         for i in node.arguments:
             if isinstance(i, str):
-                label:str = self.increase_printf_label()
+                label: str = self.increase_printf_label()
                 self.data.append(f"{label}: .asciiz {i}")
                 self.text.append(f"move $a{str(a_ctr)}, {label}")
             else:
@@ -944,9 +945,11 @@ class MIPSVisitor:
 
         if rt == "float":
             returnRegister.assign(self.freg, "f")
+            self.freg += 1
             self.text.append(f"mtc1 {returnRegister}, $v0")
         else:
             returnRegister.assign(self.treg, "t")
+            self.treg += 1
             self.text.append(f"move {returnRegister}, $v0")
 
         return returnRegister
