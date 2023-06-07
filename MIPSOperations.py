@@ -43,30 +43,31 @@ class Local(Register):
         self.offset = offset
         self.type = type
 
-    def loadLocal(self, register_nr, sp):
+    def loadLocal(self, register_nr, offset):
         newRegister = Register()
         if self.type == "float":
             newType = "f"
-            instruction = f"l.s $f{register_nr}, {self.offset - sp}($sp)"
+            instruction = f"l.s $f{register_nr}, {offset - self.offset}($sp)"
         elif self.type == "byte":
             newType = "t"
-            instruction = f"lb $t{register_nr}, {self.offset - sp}($sp)"
+            instruction = f"lb $t{register_nr}, {offset - self.offset}($sp)"
         else:
+            # TODO LOCALARRAY
             newType = "t"
-            instruction = f"lw $t{register_nr}, {self.offset - sp}($sp)"
+            instruction = f"lw $t{register_nr}, {offset - self.offset}($sp)"
 
         newRegister.assign(register_nr, newType)
         return instruction, newRegister
 
-    def storeLocal(self, register, sp):
+    def storeLocal(self, register, offset):
         if self.type == "float":
-            return f"s.s {register}, {self.offset - sp}($sp)"
+            return f"s.s {register}, {offset - self.offset}($sp)"
         else:
-            return f"sw {register}, {self.offset - sp}($sp)"
+            return f"sw {register}, {offset - self.offset}($sp)"
 
-    def loadAddress(self, register_nr, sp):
+    def loadAddress(self, register_nr):
         newRegister = Register()
-        instruction = f"addi $t{register_nr}, $sp, {self.offset - sp}"
+        instruction = f"addi $t{register_nr}, $sp, {self.offset}"
 
         newRegister.assign(register_nr, "t")
         return instruction, newRegister
@@ -438,9 +439,9 @@ def compare(dest, op, src1, src2, temp=None):
 
 # no flaots
 def logical_and(dest, src1, src2):
-    return f"and $t{dest}, $t{src1}, $t{src2}"
+    return f"and {dest}, {src1}, {src2}"
 
 
 # no floats
 def logical_or(dest, src1, src2):
-    return f"or $t{dest}, $t{src1}, $t{src2}"
+    return f"or {dest}, {src1}, {src2}"

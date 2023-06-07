@@ -501,7 +501,9 @@ class AstVisitor(CVisitor):
 
         for arg in node.arguments:
             if arg.value.type == "unary":
-                self.cur_symbol_table.symbol_used_twice(arg.value.variable.name)
+                n = arg.value.variable.name
+                self.cur_symbol_table.symbol_used_twice(n)
+                #self.cur_symbol_table.add_symbol_value(n, "None", line_nr)
 
         return node
 
@@ -754,7 +756,7 @@ class AstVisitor(CVisitor):
         return node
 
     def semantic_assignment_check(self, node: AssignmentNode):
-
+        # ScanF roept dit niet op TODO
         # Adding variable values to the symbol table
         if node.right.type == 'literal':
             if node.left.type in ['instantiation', 'variable']:
