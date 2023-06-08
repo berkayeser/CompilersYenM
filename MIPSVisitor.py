@@ -1383,12 +1383,12 @@ class MIPSVisitor:
         print(lRegister)
         if lRegister.type == "f":
             tempRegister = Register()
-            tempRegister.assign(self.treg , "t")
+            tempRegister.assign(self.treg+1 , "t") # TODO Moet eigenlijk self.treg zijn
             self.text.append(f"mfc1 {tempRegister} {lRegister}")
             lRegister = tempRegister
         if rRegister.type == "f":
             tempRegister = Register()
-            tempRegister.assign(self.treg, "t")
+            tempRegister.assign(self.treg+1, "t") # Moet eigenlijk self.treg zijn
             self.text.append(f"mfc1 {tempRegister} {rRegister}")
             rRegister = tempRegister
 
